@@ -1,0 +1,5 @@
+setupRequired("cx_Oracle 5.1.2")
+setupRequired("coreutils 0.4.1")
+envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
+envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python/archivetools)
+envPrepend(PATH, ${PRODUCT_DIR}/bin)
