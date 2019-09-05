@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
-
+import matplotlib
+matplotlib.use('PS')
 import unittest
 from archivetools import backup_util as bu
 
