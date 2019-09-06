@@ -422,10 +422,11 @@ class TestWhereis(unittest.TestCase):
         svcs = 'my.ini'
         section = 'db_sec'
         filename = 'test.fits'
-        sys.argv.extend(['--debug',
-                         '--des_services=%s' % svcs,
-                         '--section=%s' % section,
-                         '--filename=%s' % filename
+        sys.argv = ['where_is.py',
+                    '--debug',
+                    '--des_services=%s' % svcs,
+                    '--section=%s' % section,
+                    '--filename=%s' % filename
         ])
         args = wis.parse_options()
         self.assertTrue(args['debug'])
@@ -433,6 +434,7 @@ class TestWhereis(unittest.TestCase):
         self.assertEqual(args['section'], section)
         self.assertEqual(args['filename'], filename)
         self.assertEqual(args['archive'], 'desar2home')
+        sys.argv = temp
         
     def test_main(self):
         self.assertTrue(True)
