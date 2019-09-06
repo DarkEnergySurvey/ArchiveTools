@@ -7,6 +7,7 @@ from archivetools import backup_util as bu
 import sys
 import copy
 sys.path.append('bin')
+sys.path.append('tests')
 
 import where_is as wis
 
@@ -427,7 +428,7 @@ class TestWhereis(unittest.TestCase):
                     '--des_services=%s' % svcs,
                     '--section=%s' % section,
                     '--filename=%s' % filename
-        ])
+        ]
         args = wis.parse_options()
         self.assertTrue(args['debug'])
         self.assertEqual(args['des_services'], svcs)
