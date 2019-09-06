@@ -107,7 +107,8 @@ class Transfer(object):
                         if self.args['xfer_method'] == 'rsync':
                             cmd = "rsync -xavP {0} mss:{1}".format(archive_name, self.mss_dir)
                         elif self.args['xfer_method'] == 'srmcp':
-                            XXXXX
+                            pass
+                            #XXXXX
                         elif self.args['xfer_method'] == 'ftp':
                             print "Using ftp"
                         elif self.args['xfer_method'] == 'gridftp':

@@ -56,11 +56,11 @@ def parse_options():
 
 def getproc(name):
     res = []
-    for proc in psutil.process_iter():
-        if proc.name() == 'python':
-            temp = proc.as_dict()
+    for prc in psutil.process_iter():
+        if prc.name() == 'python':
+            temp = prc.as_dict()
             if name in temp['cmdline'][1]:
-                res.append(proc.as_dict())
+                res.append(prc.as_dict())
     return res
 
 def proc(name):
@@ -77,13 +77,13 @@ def proc(name):
         the full name of the task
     """
     procs = getproc(name)
-    print name,len(procs)
+    print name, len(procs)
     if len(procs) > 1:
         raise Exception('Too many instance of %s' % name)
     elif len(procs) == 0:
         return (False, datetime.datetime.now())
     starttime = datetime.datetime.fromtimestamp(procs[0]['create_time'])
-    return True,starttime
+    return True, starttime
 
 
     #temp = sp.check_output(["ps", "-ef"])
@@ -94,21 +94,21 @@ def proc(name):
     #        return True, tmp[6]
     #return False, None
 
-def todatetime(date, time):
+def todatetime(date, tme):
     """ Method to turn seperate date and time items into a datetime object
 
         Parameters
         ----------
         date : list
             List containing date captured from a log file
-        time : list
+        tme : list
             List containing time captured from a log file
 
         Returns
         -------
         datetime object
     """
-    return datetime.datetime(int(date[0]), int(date[1]), int(date[2]), int(time[0]), int(time[1]), int(time[2]))
+    return datetime.datetime(int(date[0]), int(date[1]), int(date[2]), int(tme[0]), int(tme[1]), int(tme[2]))
 
 def monitorp(pname, logf, maxtime):
     """ Method to report on the current status of a task
@@ -196,7 +196,7 @@ def get_size(path):
             count += 1
             fpath = os.path.join(dirpath, fname)
             total_size += os.path.getsize(fpath)
-    print 'count  ',count,'  ',time.time()-start
+    print 'count  ', count, '  ', time.time()-start
     return total_size
 
 def get_size_db(curs, pfwid):
@@ -281,7 +281,7 @@ def get_backupdir_data(cur, archive_root):
         #else:
         #    #future_pipe_size += get_size_db(cur, res[2])
         #    future_pipe_count += 1
-    cur.execute('select sum(df.filesize) from desfile df, file_archive_info fai, gtt_id gtt where df.pfw_attempt_id=gtt.id and df.id=fai.desfile_id' % (pfwid))
+    cur.execute('select sum(df.filesize) from desfile df, file_archive_info fai, gtt_id gtt where df.pfw_attempt_id=gtt.id and df.id=fai.desfile_id')
     future_pipe_size = int(cur.fetchall()[0][0])
 
     future_pipe_count -= future_raw_count
@@ -415,8 +415,8 @@ def report_processes(html):
     """
     global processes
 
-    for proc in processes:
-        proc['status'] = monitorp(proc['proc'], proc['log'], proc['maxrun'])
+    for prc in processes:
+        prc['status'] = monitorp(prc['proc'], prc['log'], prc['maxrun'])
     #scstat = monitorp("archive_setup.py", "backup_setup.log")
     #tstat = monitorp("run_backup.py", "backup.log")
     #trstat = monitorp("transfer.py", "transfer.log")
@@ -426,11 +426,11 @@ def report_processes(html):
     status = '<tr><th>Status</th>'
     uptime = '<tr><th>Uptime</th>'
     lastrun = '<tr><th>Last Run</th>'
-    for proc in processes:
-        header += '<th>' + proc['name'] + '</th>'
-        status += '<td>%s</td>' % (proc['status'].status)
-        uptime += '<td bgcolor=%s>%s</td>' % (str(proc['status'].status_color), proc['status'].uptime)
-        lastrun += '<td bgcolor=%s>%s</td>' % (str(proc['status'].runcolor), proc['status'].lastrun)
+    for prc in processes:
+        header += '<th>' + prc['name'] + '</th>'
+        status += '<td>%s</td>' % (prc['status'].status)
+        uptime += '<td bgcolor=%s>%s</td>' % (str(prc['status'].status_color), prc['status'].uptime)
+        lastrun += '<td bgcolor=%s>%s</td>' % (str(prc['status'].runcolor), prc['status'].lastrun)
 
     header += '</tr>\n'
     status += '</tr>\n'
@@ -662,17 +662,17 @@ def main():
         cur = util.cursor()
 
         # get the last date the script was run
-        print 'a',datetime.datetime.now()
+        #print 'a', datetime.datetime.now()
         (numxfer, xfersize, num_not_xfer, not_xfersize) = get_tape_data(cur)
-        print 'b',datetime.datetime.now()
+        #print 'b',datetime.datetime.now()
         (numproc, numtoproc, rawproc, rawtoproc, future_raw_size, future_pipe_size, raw_size, pipe_size, future_raw_count, future_pipe_count) = get_backupdir_data(cur, util.root)
-        print 'c',datetime.datetime.now()
+        #print 'c',datetime.datetime.now()
         (num_deprec, depsize) = get_deprecated(cur)
-        print 'd',datetime.datetime.now()
+        #print 'd',datetime.datetime.now()
         (dbcount, dbsize) = get_database(cur)
-        print 'e',datetime.datetime.now()
+        #print 'e',datetime.datetime.now()
         untrans = get_untransferred(cur)
-        print 'f',datetime.datetime.now()
+        #print 'f',datetime.datetime.now()
         (totaltarsize, rawsize, sizesbytype) = get_total_data(cur)
 
         bu.Pie('/work/QA/technical/backups/data_size_on_tape.png', sizesbytype.values(),

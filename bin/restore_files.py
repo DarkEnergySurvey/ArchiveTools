@@ -23,9 +23,9 @@ def get_tape(filename):
             The name of the file to retrieve
     """
     #if rtn != 0:
-    if not status[1].ok:
-        print 'Error retrieving tape file from archive.'
-        sys.exit(1)
+    #if not status[1].ok:
+    #    print 'Error retrieving tape file from archive.'
+    #    sys.exit(1)
 
 def restore_files(util, args, data):
     """ Method to restore file to the file system
