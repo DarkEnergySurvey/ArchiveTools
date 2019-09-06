@@ -4,7 +4,11 @@ matplotlib.use('PS')
 import mock
 import unittest
 from archivetools import backup_util as bu
+import sys
+import copy
+sys.path.append('bin')
 
+import where_is as wis
 
 class TestBackupUtil(unittest.TestCase):
     def test_get_subdir(self):
@@ -414,7 +418,21 @@ class TestTransfer(unittest.TestCase):
 
 class TestWhereis(unittest.TestCase):
     def test_parse_options(self):
-        self.assertTrue(True)
+        temp = copy.deepcopy(sys.argv)
+        svcs = 'my.ini'
+        section = 'db_sec'
+        filename = 'test.fits'
+        sys.argv.extend(['--debug',
+                         '--des_services=%s' % svcs,
+                         '--section=%s' % section,
+                         '--filename=%s' % filename
+        ])
+        args = wis.parse_options()
+        self.assertTrue(args['debug'])
+        self.assertEqual(args['des_services'], svcs)
+        self.assertEqual(args['section'], section)
+        self.assertEqual(args['filename'], filename)
+        self.assertEqual(args['archive'], 'desar2home')
         
     def test_main(self):
         self.assertTrue(True)
