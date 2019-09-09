@@ -1,0 +1,6 @@
+[run]
+branch = True
+
+[report]
+exculde_lines =
+    if __name__ == .__main__.:
