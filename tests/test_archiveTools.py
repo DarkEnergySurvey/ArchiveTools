@@ -11,6 +11,7 @@ import copy
 import datetime
 sys.path.append('bin')
 sys.path.append('tests')
+import os
 
 import where_is as wis
 
@@ -31,8 +32,9 @@ class TestBackupUtil(unittest.TestCase):
         self.assertEqual(bu.get_subdir('DB_BACKUPSTUFF'), 'DB')
         self.assertEqual(bu.get_subdir('ANYTHING_ELSE'), 'OPS')
     
-    def test_locate(self):
-        self.assertTrue(True)
+    @patch('archivetools.backup_util.Util')
+    def test_locate(self, mockUtil):
+        pass
 
     def test_generate_md5sum(self):
         # test on a pre-generated file
@@ -118,9 +120,36 @@ class TestBackupUtil(unittest.TestCase):
                     self.assertTrue('12346' in output)
                     self.assertTrue('Incomplete transfer' in output)
 
-
-    def test_check_files(self):
-        self.assertTrue(True)
+    @patch('archivetools.backup_util.Util')
+    @patch('archivetools.backup_util.os')
+    @patch('archivetools.backup_util.shutil')
+    def test_check_files(self, utilPatch, ospatch, shpatch):
+        md5s = ['005ad754bf7840202c382989472ed560',
+                '56b6f70fe8f57c4e912caea7fe43de20',
+                'bb53b347b33632d2e8f6c8389ae003a7']
+        badmd5 = ['005ad754bf7840202c382989472ed560',
+                  '56b6f70fe8f57c4e962caea7fe43de20',
+                  'bb53b347b33632d2e8f6c8389ae003a7']
+        filenames = ['testfile.dat',
+                     'anotherfile.dat',
+                     'lasfile.d']
+        data = {filenames[0]: [None, md5s[0]],
+                filenames[1]: [None, md5s[1]],
+                filenames[2]: [None, md5s[2]]}
+        walkvals = [['d1', '', [filenames[0]]],
+                    ['d3', '', [filenames[1]]],
+                    ['dd', '', [filenames[2]]]]
+        with patch('archivetools.backup_util.tarfile.open') as tarpatch:
+            with patch('archivetools.backup_util.os.walk', return_value=walkvals) as m:
+                with patch('archivetools.backup_util.generate_md5sum', side_effect=md5s) as md:
+                    self.assertTrue(bu.check_files(data,'tt', 'ac.tar', utilPatch))
+        
+        # now test a failure
+        with patch('archivetools.backup_util.tarfile.open') as tarpatch:
+            with patch('archivetools.backup_util.os.walk', return_value=walkvals) as m:
+                with patch('archivetools.backup_util.generate_md5sum', side_effect=badmd5) as md:
+                    self.assertFalse(bu.check_files(data,'tt', 'ac.tar', utilPatch))
+        
         
     def test_Util_init(self):
         self.assertTrue(True)
