@@ -165,13 +165,13 @@ def calculate_archive_size(sizestr):
         Parameters
         ----------
         sizestr : str
-            String representation of the size (i.e. 2.05 G)
+            String representation of the size (i.e. 2G)
 
         Returns
         -------
         int of the size in bytes
     """
-    match_string = '(\d+)(\w+)'
+    match_string = r'(\d+)(\w+)'
     regex = re.compile(match_string)
     mymatch = regex.search(sizestr)
     size = int(mymatch.group(1))

@@ -4,15 +4,13 @@ matplotlib.use('PS')
 import unittest
 from contextlib import contextmanager
 from StringIO import StringIO
-from mock import patch
+from mock import patch, mock_open
 from archivetools import backup_util as bu
 import sys
 import copy
 import datetime
 sys.path.append('bin')
 sys.path.append('tests')
-#sys.path.append('python')
-#sys.path.append('../python')
 
 import where_is as wis
 
@@ -36,14 +34,76 @@ class TestBackupUtil(unittest.TestCase):
         self.assertTrue(True)
 
     def test_generate_md5sum(self):
-        self.assertTrue(True)
+        self.assertEqual(bu.generate_md5sum('tests/test.file'), '9a6944ab3ae1ab7843629a8e4d167bfb')
         
     def test_calculate_archive_size(self):
-        self.assertTrue(True)
-        
+        b = 5
+        kb = 3
+        mb = 7
+        gb = 2
+        tb = 9
+        pb = 8
+        byte = 1 * b
+        kbyte = 1024 * kb
+        mbyte = 1048576 * mb
+        gbyte = 1073741824 * gb
+        tbyte = 1099511627776 * tb
+        pbyte = 1125899906842624 * pb
+
+        self.assertEqual(bu.calculate_archive_size('%ib' % b), byte)
+        self.assertEqual(bu.calculate_archive_size('%iB' % b), byte)
+        self.assertEqual(bu.calculate_archive_size('%ik' % kb), kbyte)
+        self.assertEqual(bu.calculate_archive_size('%iK' % kb), kbyte)
+        self.assertEqual(bu.calculate_archive_size('%im' % mb), mbyte)
+        self.assertEqual(bu.calculate_archive_size('%iM' % mb), mbyte)
+        self.assertEqual(bu.calculate_archive_size('%ig' % gb), gbyte)
+        self.assertEqual(bu.calculate_archive_size('%iG' % gb), gbyte)
+        self.assertEqual(bu.calculate_archive_size('%it' % tb), tbyte)
+        self.assertEqual(bu.calculate_archive_size('%iT' % tb), tbyte)
+        self.assertEqual(bu.calculate_archive_size('%ip' % pb), pbyte)
+        self.assertEqual(bu.calculate_archive_size('%iP' % pb), pbyte)
+    
     def test_srmls(self):
-        self.assertTrue(True)
-          
+        with patch('archivetools.backup_util.Util') as Ut:
+            with patch('archivetools.backup_util.os.system') as syspatch:
+                with patch('archivetools.backup_util.open', mock_open(read_data='')) as m:
+                    with capture_output() as (out,err):
+                        with self.assertRaises(SystemExit):
+                            bu.srmls('a', 'b', 'c', 'd', 0, Ut)
+                        output = out.getvalue().strip()
+                        self.assertTrue('No such file on tape' in output)
+
+        with patch('archivetools.backup_util.os.system') as syspatch:
+            with patch('archivetools.backup_util.open', mock_open(read_data='')) as m:
+                with capture_output() as (out,err):
+                    with self.assertRaises(SystemExit):
+                        bu.srmls('a', 'b', 'c', 'd', 0, None)
+                    output = out.getvalue().strip()
+                    self.assertTrue('No such file on tape' in output)
+
+        with patch('archivetools.backup_util.os.system') as syspatch:
+            with patch('archivetools.backup_util.open', mock_open(read_data='12345 file size')) as m:
+                self.assertEqual(bu.srmls('a', 'b', 'c', 'd', 12345, None), 12345)
+
+        with patch('archivetools.backup_util.os.system') as syspatch:
+            with patch('archivetools.backup_util.open', mock_open(read_data='12345 file size')) as m:
+                with capture_output() as (out,err):
+                    with self.assertRaises(SystemExit):
+                        bu.srmls('a', 'b', 'c', 'd', 12346, Ut)
+                    output = out.getvalue().strip()
+                    self.assertTrue('12346' in output)
+                    self.assertTrue('Incomplete transfer' in output)
+
+        with patch('archivetools.backup_util.os.system') as syspatch:
+            with patch('archivetools.backup_util.open', mock_open(read_data='12345 file size')) as m:
+                with capture_output() as (out,err):
+                    with self.assertRaises(SystemExit):
+                        bu.srmls('a', 'b', 'c', 'd', 12346, None)
+                    output = out.getvalue().strip()
+                    self.assertTrue('12346' in output)
+                    self.assertTrue('Incomplete transfer' in output)
+
+
     def test_check_files(self):
         self.assertTrue(True)
         
@@ -450,7 +510,6 @@ class TestWhereis(unittest.TestCase):
         sys.argv = temp
     
     @patch('where_is.Util')
-    #@patch('where_is.locate')
     def test_main(self, mockUitl):
         temp = copy.deepcopy(sys.argv)
         svcs = 'my.ini'
