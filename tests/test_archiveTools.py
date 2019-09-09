@@ -1,15 +1,30 @@
 #!/usr/bin/env python2
 import matplotlib
 matplotlib.use('PS')
-import mock
 import unittest
+from contextlib import contextmanager
+from StringIO import StringIO
+from mock import patch
 from archivetools import backup_util as bu
 import sys
 import copy
+import datetime
 sys.path.append('bin')
 sys.path.append('tests')
+#sys.path.append('python')
+#sys.path.append('../python')
 
 import where_is as wis
+
+@contextmanager
+def capture_output():
+    new_out, new_err = StringIO(), StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    try:
+        sys.stdout, sys.stderr = new_out, new_err
+        yield sys.stdout, sys.stderr
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
 
 class TestBackupUtil(unittest.TestCase):
     def test_get_subdir(self):
@@ -158,9 +173,6 @@ class TestArchiveSetup(unittest.TestCase):
 
 class TestHungjobs(unittest.TestCase):
     def test_parse_cmdline(self):
-        self.assertTrue(True)
-        
-    def test_query_attempts(self):
         self.assertTrue(True)
         
     def test_query_attempts(self):
@@ -436,9 +448,65 @@ class TestWhereis(unittest.TestCase):
         self.assertEqual(args['filename'], filename)
         self.assertEqual(args['archive'], 'desar2home')
         sys.argv = temp
-        
-    def test_main(self):
-        self.assertTrue(True)
+    
+    @patch('where_is.Util')
+    #@patch('where_is.locate')
+    def test_main(self, mockUitl):
+        temp = copy.deepcopy(sys.argv)
+        svcs = 'my.ini'
+        section = 'db_sec'
+        filename = 'test.fits'
+        sys.argv = ['where_is.py',
+                    '--des_services=%s' % svcs,
+                    '--section=%s' % section,
+                    '--filename=%s' % filename
+        ]
+        unitdate = datetime.datetime(2018, 6, 15, 20, 0, 18)
+        transdate = datetime.datetime(2018, 6, 16, 3, 15, 25)
+        tapedate = datetime.datetime(2018, 6, 16, 2, 55, 0)
+        unitfile = 'myUnit.tar'
+        tapefile = 'myTape.tar'
+        onTape = {'unit':None,
+                  'unitdate': None,
+                  'tape': None,
+                  'tapedate': None,
+                  'transdate': None,
+                  'arch_root': 'the_root',
+                  'path': 'big/long/data/path'}
+        with patch('where_is.locate') as mockLocate:
+            mockLocate.return_value = onTape
+            with capture_output() as (out,err):
+                wis.main()
+                output = out.getvalue().strip()
+                self.assertFalse(unitfile in output)
+                self.assertFalse(tapefile in output)
+
+        onTape['unit'] = unitfile
+        onTape['unitdate'] = unitdate
+        with patch('where_is.locate') as mockLocate:
+            mockLocate.return_value = onTape
+            with capture_output() as (out, err):
+                wis.main()
+                output = out.getvalue().strip()
+                self.assertTrue(unitfile in output)
+                self.assertTrue(unitdate.strftime("%Y-%m-%d") in output)
+                self.assertTrue('has not been added' in output)
+                self.assertFalse(tapefile in output)
+
+        onTape['tape'] = tapefile
+        onTape['tapedate'] = tapedate
+        onTape['transdate'] = transdate
+        with patch('where_is.locate') as mockLocate:
+            mockLocate.return_value = onTape
+            with capture_output() as (out, err):
+                wis.main()
+                output = out.getvalue().strip()
+                self.assertTrue(unitfile in output)
+                self.assertTrue(unitdate.strftime("%Y-%m-%d") in output)
+                self.assertTrue(tapedate.strftime("%Y-%m-%d") in output)
+                self.assertTrue(tapefile in output)
+
+        sys.argv = temp
         
     
 if __name__ == '__main__':

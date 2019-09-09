@@ -5,7 +5,8 @@
 import pprint
 import argparse
 
-import archivetools.backup_util as bu
+#import archivetools.backup_util as bu
+from archivetools.backup_util import Util, locate
 
 
 def parse_options():
@@ -36,10 +37,10 @@ def main():
     args = parse_options()
     if args['debug']:
         pprint.pprint(args)
-    util = bu.Util(args['des_services'], args['section'])
+    util = Util(args['des_services'], args['section'])
     #util.connect(args['des_services'], args['section'])
     try:
-        data = bu.locate(util, args['filename'], args['reqnum'], args['unitname'],
+        data = locate(util, args['filename'], args['reqnum'], args['unitname'],
                          args['attnum'], args['pfwid'], args['path'], args['archive'])
         if data['unit'] and not data['tape']:
             print "Item is located in\n  Unit Tar: %s  created on %s\n and has not been added to a Tape Tar yet." % (data['unit'], data['unitdate'].strftime("%Y-%m-%d"))
