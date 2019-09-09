@@ -495,6 +495,17 @@ class TestWhereis(unittest.TestCase):
 
         onTape['tape'] = tapefile
         onTape['tapedate'] = tapedate
+        with patch('where_is.locate') as mockLocate:
+            mockLocate.return_value = onTape
+            with capture_output() as (out, err):
+                wis.main()
+                output = out.getvalue().strip()
+                self.assertTrue(unitfile in output)
+                self.assertTrue(unitdate.strftime("%Y-%m-%d") in output)
+                self.assertTrue(tapedate.strftime("%Y-%m-%d") in output)
+                self.assertTrue(tapefile in output)
+                self.assertTrue('has not been transferred' in output)
+
         onTape['transdate'] = transdate
         with patch('where_is.locate') as mockLocate:
             mockLocate.return_value = onTape
@@ -505,6 +516,24 @@ class TestWhereis(unittest.TestCase):
                 self.assertTrue(unitdate.strftime("%Y-%m-%d") in output)
                 self.assertTrue(tapedate.strftime("%Y-%m-%d") in output)
                 self.assertTrue(tapefile in output)
+                self.assertTrue(transdate.strftime("%Y-%m-%d") in output)
+
+        with patch('where_is.locate', side_effect=ValueError()):
+            with self.assertRaises(Exception):
+                wis.main()
+
+        sys.argv.append('--debug')
+        with patch('where_is.locate') as mockLocate:
+            mockLocate.return_value = onTape
+            with capture_output() as (out, err):
+                wis.main()
+                output = out.getvalue().strip()
+                self.assertTrue(unitfile in output)
+                self.assertTrue(unitdate.strftime("%Y-%m-%d") in output)
+                self.assertTrue(tapedate.strftime("%Y-%m-%d") in output)
+                self.assertTrue(tapefile in output)
+                self.assertTrue(transdate.strftime("%Y-%m-%d") in output)
+                self.assertTrue(section in output)
 
         sys.argv = temp
         

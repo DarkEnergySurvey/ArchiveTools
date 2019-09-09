@@ -45,7 +45,7 @@ def main():
         if data['unit'] and not data['tape']:
             print "Item is located in\n  Unit Tar: %s  created on %s\n and has not been added to a Tape Tar yet." % (data['unit'], data['unitdate'].strftime("%Y-%m-%d"))
         if data['tape']:
-            if data['tapedate'] is None:
+            if data['transdate'] is None:
                 print "Item is located in\n  Unit Tar: %s  created on %s\n  Tape Tar: %s  created on %s\nand has not been transferred yet." % (data['unit'], data['unitdate'].strftime("%Y-%m-%d"), data['tape'], data['tapedate'].strftime("%Y-%m-%d"))
             else:
                 print "Item is located in\n  Unit Tar: %s  created on %s\n  Tape Tar: %s  created on %s  transferred on %s" % (data['unit'], data['unitdate'].strftime("%Y-%m-%d"), data['tape'], data['tapedate'].strftime("%Y-%m-%d"), data['transdate'].strftime("%Y-%m-%d"))
