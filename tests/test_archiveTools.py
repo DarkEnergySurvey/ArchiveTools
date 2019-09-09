@@ -26,6 +26,7 @@ def capture_output():
 
 class TestBackupUtil(unittest.TestCase):
     def test_get_subdir(self):
+        # test each of the file groupings
         self.assertEqual(bu.get_subdir('RAW_FILE'), 'DTS')
         self.assertEqual(bu.get_subdir('DB_BACKUPSTUFF'), 'DB')
         self.assertEqual(bu.get_subdir('ANYTHING_ELSE'), 'OPS')
@@ -34,6 +35,7 @@ class TestBackupUtil(unittest.TestCase):
         self.assertTrue(True)
 
     def test_generate_md5sum(self):
+        # test on a pre-generated file
         self.assertEqual(bu.generate_md5sum('tests/test.file'), '9a6944ab3ae1ab7843629a8e4d167bfb')
         
     def test_calculate_archive_size(self):
@@ -50,20 +52,29 @@ class TestBackupUtil(unittest.TestCase):
         tbyte = 1099511627776 * tb
         pbyte = 1125899906842624 * pb
 
+        # test if input is in bytes
         self.assertEqual(bu.calculate_archive_size('%ib' % b), byte)
         self.assertEqual(bu.calculate_archive_size('%iB' % b), byte)
+        # test if input is in kilobytes
         self.assertEqual(bu.calculate_archive_size('%ik' % kb), kbyte)
         self.assertEqual(bu.calculate_archive_size('%iK' % kb), kbyte)
+        # test is input is in megabytes
         self.assertEqual(bu.calculate_archive_size('%im' % mb), mbyte)
         self.assertEqual(bu.calculate_archive_size('%iM' % mb), mbyte)
+        # test if input is in gigabytes
         self.assertEqual(bu.calculate_archive_size('%ig' % gb), gbyte)
         self.assertEqual(bu.calculate_archive_size('%iG' % gb), gbyte)
+        # test if input is in terabytes
         self.assertEqual(bu.calculate_archive_size('%it' % tb), tbyte)
         self.assertEqual(bu.calculate_archive_size('%iT' % tb), tbyte)
+        # test if input is in petabytes
         self.assertEqual(bu.calculate_archive_size('%ip' % pb), pbyte)
         self.assertEqual(bu.calculate_archive_size('%iP' % pb), pbyte)
+        # test for unsupported size
+        self.assertEqual(bu.calculate_archive_size('%ix' % b), byte)
     
     def test_srmls(self):
+        # test for blank file
         with patch('archivetools.backup_util.Util') as Ut:
             with patch('archivetools.backup_util.os.system') as syspatch:
                 with patch('archivetools.backup_util.open', mock_open(read_data='')) as m:
@@ -73,6 +84,7 @@ class TestBackupUtil(unittest.TestCase):
                         output = out.getvalue().strip()
                         self.assertTrue('No such file on tape' in output)
 
+        # test with blank file and Util
         with patch('archivetools.backup_util.os.system') as syspatch:
             with patch('archivetools.backup_util.open', mock_open(read_data='')) as m:
                 with capture_output() as (out,err):
@@ -81,10 +93,12 @@ class TestBackupUtil(unittest.TestCase):
                     output = out.getvalue().strip()
                     self.assertTrue('No such file on tape' in output)
 
+        # test with correct file size
         with patch('archivetools.backup_util.os.system') as syspatch:
             with patch('archivetools.backup_util.open', mock_open(read_data='12345 file size')) as m:
                 self.assertEqual(bu.srmls('a', 'b', 'c', 'd', 12345, None), 12345)
 
+        # test with too small a file size and Util
         with patch('archivetools.backup_util.os.system') as syspatch:
             with patch('archivetools.backup_util.open', mock_open(read_data='12345 file size')) as m:
                 with capture_output() as (out,err):
@@ -94,6 +108,7 @@ class TestBackupUtil(unittest.TestCase):
                     self.assertTrue('12346' in output)
                     self.assertTrue('Incomplete transfer' in output)
 
+        # test with too small a file size
         with patch('archivetools.backup_util.os.system') as syspatch:
             with patch('archivetools.backup_util.open', mock_open(read_data='12345 file size')) as m:
                 with capture_output() as (out,err):
@@ -491,6 +506,7 @@ class TestTransfer(unittest.TestCase):
 
 class TestWhereis(unittest.TestCase):
     def test_parse_options(self):
+        # test parsing the command line options
         temp = copy.deepcopy(sys.argv)
         svcs = 'my.ini'
         section = 'db_sec'
@@ -511,6 +527,7 @@ class TestWhereis(unittest.TestCase):
     
     @patch('where_is.Util')
     def test_main(self, mockUitl):
+        # test for no archiving of the file yet
         temp = copy.deepcopy(sys.argv)
         svcs = 'my.ini'
         section = 'db_sec'
@@ -540,6 +557,7 @@ class TestWhereis(unittest.TestCase):
                 self.assertFalse(unitfile in output)
                 self.assertFalse(tapefile in output)
 
+        # test where file has been put in a unit file
         onTape['unit'] = unitfile
         onTape['unitdate'] = unitdate
         with patch('where_is.locate') as mockLocate:
@@ -552,6 +570,7 @@ class TestWhereis(unittest.TestCase):
                 self.assertTrue('has not been added' in output)
                 self.assertFalse(tapefile in output)
 
+        # test where file has been put in tape file, but not transferred
         onTape['tape'] = tapefile
         onTape['tapedate'] = tapedate
         with patch('where_is.locate') as mockLocate:
@@ -565,6 +584,7 @@ class TestWhereis(unittest.TestCase):
                 self.assertTrue(tapefile in output)
                 self.assertTrue('has not been transferred' in output)
 
+        # test where file has been transferred
         onTape['transdate'] = transdate
         with patch('where_is.locate') as mockLocate:
             mockLocate.return_value = onTape
@@ -577,10 +597,12 @@ class TestWhereis(unittest.TestCase):
                 self.assertTrue(tapefile in output)
                 self.assertTrue(transdate.strftime("%Y-%m-%d") in output)
 
+        # test the exception
         with patch('where_is.locate', side_effect=ValueError()):
             with self.assertRaises(Exception):
                 wis.main()
 
+        # test debug output
         sys.argv.append('--debug')
         with patch('where_is.locate') as mockLocate:
             mockLocate.return_value = onTape
