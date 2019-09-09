@@ -319,7 +319,7 @@ class Util(desdmdbi.DesDmDbi):
     def ping(self):
         try:
             self.con.ping()
-        except:
+        except Exception:
             return False
         return True
 
