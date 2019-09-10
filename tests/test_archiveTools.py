@@ -438,37 +438,60 @@ class TestBackupUtil(unittest.TestCase):
         util = bu.Util(None, None)
         self.assertEqual(util.root, 'the_root')
 
-        # test ping
+    @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
+    def test_Util_ping(self):
+        bu.Util.__bases__ = (MockDbi,)
+        util = bu.Util(None, None)
         self.assertTrue(util.ping())
 
         util.setThrow(True)
         self.assertFalse(util.ping())
-
-        util.setThrow(False)
-
-        # test logger init, just make sure there is no exception
-        util = bu.Util(None, None, 'my.log', 'mytype')
-
+        
+    @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
+    def test_Util_reconnect(self) :
+        bu.Util.__bases__ = (MockDbi,)
+        util = bu.Util(None, None)
         util.reconnect()
+
+    @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
+    def test_Util_init_logger(self) :
+        bu.Util.__bases__ = (MockDbi,)
+        util = bu.Util(None, None)
         
-    #def test_Util_ping(self):
-    #    self.assertTrue(True)
+    @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
+    @patch('archivetools.backup_util.MIMEText')
+    @patch('archivetools.backup_util.smtplib')
+    def test_Util_notify(self, mimeMock, smtpMock) :
+        bu.Util.__bases__ = (MockDbi,)
+        util = bu.Util(None, None)
+        with self.assertRaises(Exception):
+            util.notify(1,'my msg')
+        util = bu.Util(None, None, 'my.log', 'mytype')
+        util.notify(1, 'my msg')
+
+        util.notify(100, 'bad msg')
+        util.notify(35, 'err msg')
+        util.notify(25, 'warn msg')
+        util.notify(1, 'log msg', 'test@email.com')
+
+    @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
+    @patch('archivetools.backup_util.MIMEText')
+    @patch('archivetools.backup_util.smtplib')
+    def test_Util_log(self, mimeMock, smtpMock) :
+        bu.Util.__bases__ = (MockDbi,)
+        util = bu.Util(None, None, 'my.log', 'mytype')
+        util.log(10,'my msg')
         
-    #def test_Util_reconnect(self) :
-    #    self.assertTrue(True)
-       
-    #def test_Util_init_logger(self) :
-    #    self.assertTrue(True)
-        
-    #def test_Util_notify(self) :
-    #    self.assertTrue(True)
-        
-    #def test_Util_log(self) :
-    #    self.assertTrue(True)
-        
-    #def test_Util_checkfreespace(self) :
-    #    self.assertTrue(True)
-        
+    @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
+    @patch('archivetools.backup_util.MIMEText')
+    @patch('archivetools.backup_util.smtplib')
+    def test_Util_checkfreespace(self, mimeMock, smtpMock) :
+        bu.Util.__bases__ = (MockDbi,)
+        util = bu.Util(None, None, 'my.log', 'mytype')
+        self.assertTrue(util.checkfreespace('.'))
+        util.reqfree = 118442389504*1000
+        self.assertFalse(util.checkfreespace('.'))
+
     #def test_Plot_init(self):
     #    self.assertTrue(True)
         
