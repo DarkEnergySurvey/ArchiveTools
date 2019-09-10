@@ -44,6 +44,7 @@ class TestBackupUtil(unittest.TestCase):
         tape_tar = 'theTape.tar'
         tape_date = datetime.datetime(2018, 3, 16, 0, 22, 8)
         transfer_date = datetime.datetime(2018, 3, 16, 7, 8, 2)
+        rootpath = 'my/root/path'
 
         class MockUtil(object):
             def __init__(self):
@@ -94,6 +95,14 @@ class TestBackupUtil(unittest.TestCase):
                           filePath])
         results = bu.locate(myMock, filename='myfile', archive='myarch')
         self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertIsNone(results['unit'])
+
+        # get just file info
+        myMock.setReturn([None,
+                          filePath])
+        results = bu.locate(myMock, filename='myfile', archive='myarch')
+        self.assertIsNone(results['arch_root'])
         self.assertEqual(results['path'], archive_path)
         self.assertIsNone(results['unit'])
 
@@ -167,7 +176,7 @@ class TestBackupUtil(unittest.TestCase):
                           filePath,
                           ((unit_name,),),
                           ((created_date, None),)])
-        results = bu.locate(myMock, filename='myfile.fz', archive='myarch')
+        results = bu.locate(myMock, filename='myfile.fits.fz', archive='myarch')
         self.assertEqual(results['arch_root'], archive_root)
         self.assertEqual(results['path'], archive_path)
         self.assertEqual(results['unit'], unit_name)
@@ -193,7 +202,7 @@ class TestBackupUtil(unittest.TestCase):
                           fileNoPath,
                           ((unit_name,),),
                           ((created_date, None),)])
-        results = bu.locate(myMock, filename='myfile.fz', archive='myarch')
+        results = bu.locate(myMock, filename='myfile.fits.fz', archive='myarch')
         self.assertEqual(results['arch_root'], archive_root)
         self.assertEqual(results['path'], archive_path)
         self.assertEqual(results['unit'], unit_name)
@@ -237,6 +246,34 @@ class TestBackupUtil(unittest.TestCase):
         self.assertEqual(results['tape'], tape_tar)
         self.assertEqual(results['tapedate'], tape_date)
         self.assertEqual(results['transdate'], transfer_date)
+
+        # get just file info with root path
+        myMock.setReturn([archive_root_rtn])
+        results = bu.locate(myMock, rootpath=rootpath, archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], rootpath)
+        self.assertIsNone(results['unit'])
+
+        # get just file info with root path
+        myMock.setReturn([archive_root_rtn])
+        results = bu.locate(myMock, rootpath='/'+rootpath, archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], '/'+rootpath)
+        self.assertIsNone(results['unit'])
+
+        # get just file info with root path, no archive
+        myMock.setReturn([archive_root_rtn])
+        results = bu.locate(myMock, rootpath='/'+rootpath)
+        self.assertIsNone(results['arch_root'])
+        self.assertIsNone(results['path'])
+        self.assertIsNone(results['unit'])
+
+        # get just file info with root path, no archive
+        myMock.setReturn([None])
+        results = bu.locate(myMock, rootpath='/'+rootpath, archive='myarch')
+        self.assertIsNone(results['arch_root'])
+        self.assertIsNone(results['path'])
+        self.assertIsNone(results['unit'])
 
 
     def test_generate_md5sum(self):
