@@ -32,9 +32,100 @@ class TestBackupUtil(unittest.TestCase):
         self.assertEqual(bu.get_subdir('DB_BACKUPSTUFF'), 'DB')
         self.assertEqual(bu.get_subdir('ANYTHING_ELSE'), 'OPS')
     
-    #@patch('archivetools.backup_util.Util')
-    #def test_locate(self, mockUtil):
-    #    pass
+    def test_locate(self):
+        archive_root = '/archive/root'
+        unit_name = 'testUnit'
+        archive_root_rtn = ((archive_root,),)
+        archive_path = 'the/path/you/want'
+        file_path = 'file/path'
+        fileNoPath = ((archive_path,),)
+        filePath = ((file_path, archive_path,),)
+        created_date = datetime.datetime(2018, 3, 15, 15, 47,20)
+        tape_tar = 'theTape.tar'
+        tape_date = datetime.datetime(2018, 3, 16, 0, 22, 8)
+        transfer_date = datetime.datetime(2018, 3, 16, 7, 8, 2)
+
+        class MockUtil(object):
+            def __init__(self):
+                self.data = []
+            
+            class Cursor(object):
+                def __init__(self, data = []):
+                    self.data = data
+                    self.data.reverse()
+                
+                def setData(self, data):
+                    self.data = data
+                    self.data.reverse()
+
+                def execute(self,*args, **kwargs):
+                    pass
+
+                def fetchall(self):
+                    if self.data:
+                        return self.data.pop()
+                    return None
+            
+            def setReturn(self, data):
+                self.data = data
+            
+            def cursor(self):
+                return self.Cursor(self.data)
+        myMock = MockUtil()
+        myMock.setReturn([archive_root_rtn,
+                          filePath])
+        results = bu.locate(myMock, filename='myfile', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertIsNone(results['unit'])
+
+        myMock.setReturn([archive_root_rtn,
+                          filePath,
+                          ((None,),),
+                          ((created_date, None),)])
+        results = bu.locate(myMock, filename='myfile', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertIsNone(results['unit'])
+
+        myMock.setReturn([archive_root_rtn,
+                          filePath,
+                          ((unit_name,),),
+                          ((created_date, None),)])
+        results = bu.locate(myMock, filename='myfile', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertEqual(results['unit'], unit_name)
+        self.assertEqual(results['unitdate'], created_date)
+        self.assertIsNone(results['tape'])
+
+        myMock.setReturn([archive_root_rtn,
+                          filePath,
+                          ((unit_name,),),
+                          ((created_date, tape_tar),),
+                          ((None, None),)])
+        results = bu.locate(myMock, filename='myfile', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertEqual(results['unit'], unit_name)
+        self.assertEqual(results['unitdate'], created_date)
+        self.assertEqual(results['tape'], tape_tar)
+        self.assertIsNone(results['tapedate'])
+
+        myMock.setReturn([archive_root_rtn,
+                          filePath,
+                          ((unit_name,),),
+                          ((created_date, tape_tar),),
+                          ((tape_date, transfer_date),)])
+        results = bu.locate(myMock, filename='myfile', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertEqual(results['unit'], unit_name)
+        self.assertEqual(results['unitdate'], created_date)
+        self.assertEqual(results['tape'], tape_tar)
+        self.assertEqual(results['tapedate'], tape_date)
+        self.assertEqual(results['transdate'], transfer_date)
+
 
     def test_generate_md5sum(self):
         # test on a pre-generated file
