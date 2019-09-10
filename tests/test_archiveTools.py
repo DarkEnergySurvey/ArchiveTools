@@ -492,29 +492,56 @@ class TestBackupUtil(unittest.TestCase):
         util.reqfree = 118442389504*1000
         self.assertFalse(util.checkfreespace('.'))
 
-    #def test_Plot_init(self):
-    #    self.assertTrue(True)
+    @patch('archivetools.backup_util.pyplot')
+    def test_Plot_init(self, plotMock):
+        pl = bu.Plot('myfile')
+        pl2 = bu.Plot('myfile2', 'TitleS')
         
-    #def test_Plot_save(self):
-    #    self.assertTrue(True)
+    @patch('archivetools.backup_util.pyplot')
+    def test_Plot_save(self, plotMock):
+        pl = bu.Plot('myfile')
+        pl.save()
+
+    @patch('archivetools.backup_util.pyplot')
+    def test_Plot_generate(self, plotMock):
+        pl = bu.Plot('myfile')
+        with capture_output() as (out, err):
+            pl.generate()
+            output = out.getvalue().strip()
+            self.assertTrue('Not implemented' in output)
+
+    @patch('archivetools.backup_util.pyplot')
+    def test_Pie_init(self, plotMock) :
+        pl = bu.Pie('myfile',[1,2],['l1','l2'])
+        pl = bu.Pie('myFile2',[1,2],['l1','l2'], colors=['red','yellow'])
+        with self.assertRaises(Exception):
+            bu.Pie('myFile',[1,2,3],['l1','l2'])
+
+    @patch('archivetools.backup_util.pyplot')
+    def test_Pie_generate(self, plotMock):
+        pl = bu.Pie('myfile',[1,2],['l1','l2'])
+        pl.generate()
         
-    #def test_Plot_generate(self):
-    #    self.assertTrue(True)
+    @patch('archivetools.backup_util.pyplot')
+    def test_BoxPlot_init(self, plotMock) :
+        bx = bu.BoxPlot('fname',[1,2,3])
+        bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
         
-    #def test_Pie_init(self) :
-    #    self.assertTrue(True)
+    @patch('archivetools.backup_util.pyplot')
+    def test_BoxPlot_add_ydata(self, plotMock):
+        bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
+        bx.add_ydata([4,5])
+        bx.add_ydata([6,7], legend="my label")
         
-    #def test_Pie_generate(self):
-    #    self.assertTrue(True)
-        
-    #def test_BoxPlot_init(self) :
-    #    self.assertTrue(True)
-        
-    #def test_BoxPlot_add_ydata(self):
-    #    self.assertTrue(True)
-        
-    #def test_BoxPlot_generate(self):
-    #    self.assertTrue(True)
+    @patch('archivetools.backup_util.pyplot')
+    def test_BoxPlot_generate(self, plotMock):
+        bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
+        bx.add_ydata([4,5])
+        bx.generate()
+        bx.add_ydata([6,7], legend='lgnd')
+
+        bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',xdate=True, dodots=True)
+
         
 
 #class TestDES_tarball(unittest.TestCase) :
