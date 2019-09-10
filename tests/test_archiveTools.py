@@ -11,9 +11,50 @@ import copy
 import datetime
 sys.path.append('bin')
 sys.path.append('tests')
+
 import os
 
 import where_is as wis
+
+class MockDbi(object):
+    def __init__(self, *args, **kwargs):
+        self.data = [(('the_root',),)]
+        self.con = self.Connection()
+
+    def cursor(self):
+        return self.Cursor(self.data)
+
+    def setThrow(self, value):
+        self.con.throw = value
+
+    class Connection(object):
+        def __init__(self):
+            self.throw = False
+
+        def ping(self):
+            if self.throw:
+                raise Exception()
+            return True
+
+    class Cursor(object):
+        def __init__(self, data = []):
+            self.data = data
+            self.data.reverse()
+
+        def setData(self, data):
+            self.data = data
+            self.data.reverse()
+
+        def execute(self,*args, **kwargs):
+            pass
+
+        def fetchall(self):
+            if self.data:
+                return self.data.pop()
+            return None
+    def setReturn(self, data):
+        self.data = data
+
 
 @contextmanager
 def capture_output():
@@ -390,9 +431,25 @@ class TestBackupUtil(unittest.TestCase):
                 with patch('archivetools.backup_util.generate_md5sum', side_effect=badmd5) as md:
                     self.assertFalse(bu.check_files(data,'tt', 'ac.tar', utilPatch))
         
-        
-    #def test_Util_init(self):
-    #    self.assertTrue(True)
+#    #@patch.object('despydbdb.desdmdbi.DesDmDbi','__init__',(MockDbi.__init__(self),))
+    @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
+    def test_Util_init(self):
+        bu.Util.__bases__ = (MockDbi,)
+        util = bu.Util(None, None)
+        self.assertEqual(util.root, 'the_root')
+
+        # test ping
+        self.assertTrue(util.ping())
+
+        util.setThrow(True)
+        self.assertFalse(util.ping())
+
+        util.setThrow(False)
+
+        # test logger init, just make sure there is no exception
+        util = bu.Util(None, None, 'my.log', 'mytype')
+
+        util.reconnect()
         
     #def test_Util_ping(self):
     #    self.assertTrue(True)
