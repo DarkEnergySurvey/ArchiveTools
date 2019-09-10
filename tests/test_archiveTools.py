@@ -538,10 +538,10 @@ class TestBackupUtil(unittest.TestCase):
         bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
         bx.add_ydata([4,5])
         bx.generate()
-        bx.add_ydata([6,7], legend='lgnd')
 
         bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',xdate=True, dodots=True)
-
+        bx.add_ydata([4,5],legend='lgnd1')
+        bx.generate()
         
 
 #class TestDES_tarball(unittest.TestCase) :
