@@ -67,14 +67,17 @@ def locate(util, filename=None, reqnum=None, unitname=None, attnum=None, pfwid=N
                 cur.execute("select archive_path from pfw_attempt pfw, desfile df where df.filename='%s' and df.compression='%s' and df.pfw_attempt_id=pfw.id" % (fname, compression))
             else:
                 cur.execute("select archive_path from pfw_attempt pfw, desfile df where df.filename='%s' and df.pfw_attempt_id=pfw.id" % (fname))
+            res = cur.fetchall()
             if not res:
                 print "File %s not found in DESFILE" % (filename)
                 return data
             path = res[0][0]
             print "File found in DESFILE with archive path: %s (full path to file unavailable)" % (path)
         else:
+            print res
             path = res[0][1]
-            print "File found with path %s and an attampt archive path of %s" % (res[0][0], path)
+            print "File found with path %s and an attempt archive path of %s" % (res[0][0], path)
+        data['path'] = path
     elif reqnum and unitname and attnum:
         cur.execute("select archive_path from pfw_attempt where reqnum=%s and unitname='%s' and attnum=%s" % (reqnum, unitname, attnum))
         res = cur.fetchall()
