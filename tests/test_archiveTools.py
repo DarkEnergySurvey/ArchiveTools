@@ -72,6 +72,24 @@ class TestBackupUtil(unittest.TestCase):
             def cursor(self):
                 return self.Cursor(self.data)
         myMock = MockUtil()
+
+        # check for exception if not enough arguments are given
+        with self.assertRaises(ValueError):
+            bu.locate(myMock)
+
+        # check for exception if not enough arguments are given
+        with self.assertRaises(ValueError):
+            bu.locate(myMock, reqnum=1234)
+
+        # check for exception if not enough arguments are given
+        with self.assertRaises(ValueError):
+            bu.locate(myMock, reqnum=1234, unitname='uunm')
+
+        # check for exception if not enough arguments are given
+        with self.assertRaises(ValueError):
+            bu.locate(myMock, unitname='uunm',attnum='2')
+
+        # get just file info
         myMock.setReturn([archive_root_rtn,
                           filePath])
         results = bu.locate(myMock, filename='myfile', archive='myarch')
@@ -79,15 +97,60 @@ class TestBackupUtil(unittest.TestCase):
         self.assertEqual(results['path'], archive_path)
         self.assertIsNone(results['unit'])
 
+        # get just file info with pfwid
+        myMock.setReturn([archive_root_rtn,
+                          fileNoPath])
+        results = bu.locate(myMock, pfwid=12345, archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertIsNone(results['unit'])
+
+        # get just file info with pfwid, pfwid not existing
+        myMock.setReturn([archive_root_rtn,
+                          None])
+        results = bu.locate(myMock, pfwid=12345, archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertIsNone(results['path'])
+        self.assertIsNone(results['unit'])
+
+        # get just file info with triplet
+        myMock.setReturn([archive_root_rtn,
+                          fileNoPath])
+        results = bu.locate(myMock, reqnum=12345, unitname='uun', attnum='2', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertIsNone(results['unit'])
+
+        # get just file info with pfwid, pfwid not existing
+        myMock.setReturn([archive_root_rtn,
+                          None])
+        results = bu.locate(myMock,  reqnum=12345, unitname='uun', attnum='2', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertIsNone(results['path'])
+        self.assertIsNone(results['unit'])
+
+        # no unit file
         myMock.setReturn([archive_root_rtn,
                           filePath,
-                          ((None,),),
-                          ((created_date, None),)])
+                          ((None,),)])
         results = bu.locate(myMock, filename='myfile', archive='myarch')
         self.assertEqual(results['arch_root'], archive_root)
         self.assertEqual(results['path'], archive_path)
         self.assertIsNone(results['unit'])
 
+        # have unit file on second iteration
+        myMock.setReturn([archive_root_rtn,
+                          filePath,
+                          None,
+                          ((unit_name,),),
+                          ((created_date, None),)])
+        results = bu.locate(myMock, filename='myfile', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertEqual(results['unit'], unit_name)
+        self.assertEqual(results['unitdate'], created_date)
+
+        # have unit file
         myMock.setReturn([archive_root_rtn,
                           filePath,
                           ((unit_name,),),
@@ -99,6 +162,54 @@ class TestBackupUtil(unittest.TestCase):
         self.assertEqual(results['unitdate'], created_date)
         self.assertIsNone(results['tape'])
 
+        # have unit file, with compression in filename
+        myMock.setReturn([archive_root_rtn,
+                          filePath,
+                          ((unit_name,),),
+                          ((created_date, None),)])
+        results = bu.locate(myMock, filename='myfile.fz', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertEqual(results['unit'], unit_name)
+        self.assertEqual(results['unitdate'], created_date)
+        self.assertIsNone(results['tape'])
+
+        # have unit file
+        myMock.setReturn([archive_root_rtn,
+                          None,
+                          fileNoPath,
+                          ((unit_name,),),
+                          ((created_date, None),)])
+        results = bu.locate(myMock, filename='myfile', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertEqual(results['unit'], unit_name)
+        self.assertEqual(results['unitdate'], created_date)
+        self.assertIsNone(results['tape'])
+
+        # have unit file, with compression in filename
+        myMock.setReturn([archive_root_rtn,
+                          None,
+                          fileNoPath,
+                          ((unit_name,),),
+                          ((created_date, None),)])
+        results = bu.locate(myMock, filename='myfile.fz', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertEqual(results['path'], archive_path)
+        self.assertEqual(results['unit'], unit_name)
+        self.assertEqual(results['unitdate'], created_date)
+        self.assertIsNone(results['tape'])
+
+        # file does not exist
+        myMock.setReturn([archive_root_rtn,
+                          None,
+                          None])
+        results = bu.locate(myMock, filename='myfile', archive='myarch')
+        self.assertEqual(results['arch_root'], archive_root)
+        self.assertIsNone(results['path'])
+        self.assertIsNone(results['unit'])
+
+        # have unit and tape tar, but no date
         myMock.setReturn([archive_root_rtn,
                           filePath,
                           ((unit_name,),),
@@ -112,6 +223,7 @@ class TestBackupUtil(unittest.TestCase):
         self.assertEqual(results['tape'], tape_tar)
         self.assertIsNone(results['tapedate'])
 
+        # have tape tar and dates
         myMock.setReturn([archive_root_rtn,
                           filePath,
                           ((unit_name,),),
