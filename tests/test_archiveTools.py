@@ -760,8 +760,6 @@ class TestArchiveSetup(unittest.TestCase):
                 with patch('archive_setup.os.path.getmtime', side_effect=times) as gtm:
                     with patch('archive_setup.os.path.getctime', side_effect=times) as gct:
                         aset.get_db(myMock.cursor(), myMock)
-                        print gtm.call_count
-                        print gct.call_count
 
     def test_get_sne(self):
         myMock = MockUtil()

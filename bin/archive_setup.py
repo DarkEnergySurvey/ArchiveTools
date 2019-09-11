@@ -75,6 +75,7 @@ def add_dirs(cur, util, dirlist):
         elif adir[5] == 0:
             dtm = adir[2] + datetime.timedelta(days=7)
         else:
+            print "CONTINUING"
             continue
         pipeline = adir[3].lower()
         camp = adir[4].upper()
