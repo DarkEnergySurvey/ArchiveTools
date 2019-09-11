@@ -8,6 +8,7 @@ import sys
 import os
 import copy
 import datetime
+import time
 
 matplotlib.use('PS')
 
@@ -719,8 +720,22 @@ class TestArchiveSetup(unittest.TestCase):
     #def test_main(self):
     #    self.assertTrue(True)
 
-    #def test_get_db(self):
+    def test_get_db(self):
+        myMock = MockUtil()
+        filenames = ['testfile.dat',
+                     'anotherfile.dat',
+                     'lasfile.d']
+        walkvals = [['/d12', '', filenames],
+                    ['/d33', '', 1],
+                    ['/ddd', '', [filenames[2]]]]
 
+        globs = [filenames, [], [filenames[2]]]
+        times = [time.time() - 100000., time.time() - 500., time.time() - 80000., time.time() - 500., time.time()-100000, time.time()-300.]
+        with patch('archive_setup.os.walk', return_value=walkvals) as m:
+            with patch('archive_setup.glob.glob', side_effect=globs) as gg:
+                with patch('archive_setup.os.path.getmtime', side_effect=times) as gtm:
+                    with patch('archive_setup.os.path.getctime', side_effect=times) as gct:
+                        aset.get_db(myMock.cursor(), myMock)
 
     def test_get_sne(self):
         myMock = MockUtil()
@@ -763,8 +778,9 @@ class TestArchiveSetup(unittest.TestCase):
         eleventh = (archPath, 'ACTIVE', datetime.datetime(2018, 2, 1, 18, 4, 0), 'supercal', 'Y5', 0, 8855774488)
         twelfth = (archPath, 'ACTIVE', datetime.datetime(2017, 5, 3, 9, 7, 55), 'RAW', 'Y4', 0, 448833)
         thirteenth = (archPath, 'ACTIVE', datetime.datetime(2019, 3, 16, 22, 5, 6), 'RAW', None, 0, 11228855)
+        fourteenth = (archPath, 'NEW', datetime.datetime(2018, 5, 6, 8, 12, 40), 'sne', 'y2', 0, 4477339922)
 
-        myMock.setReturn([(first, second, third, fourth, fifth, sixth, seventh, eighth, nineth, tenth, eleventh, twelfth, thirteenth)])
+        myMock.setReturn([(first, second, third, fourth, fifth, sixth, seventh, eighth, nineth, tenth, eleventh, twelfth, thirteenth, first)])
 
 
         mylist = []
