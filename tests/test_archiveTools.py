@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from StringIO import StringIO
 from mock import patch, mock_open
 from archivetools import backup_util as bu
+from archivetools import DES_tarball as dt
 import sys
 import copy
 import datetime
@@ -15,6 +16,8 @@ sys.path.append('tests')
 import os
 
 import where_is as wis
+
+MD5TESTSUM = '23d899a47f09b776213ae'
 
 class MockDbi(object):
     def __init__(self, *args, **kwargs):
@@ -55,6 +58,42 @@ class MockDbi(object):
     def setReturn(self, data):
         self.data = data
 
+class MockUtil(object):
+    def __init__(self):
+        self.data = []
+        self.ckeckVals = [True,False]
+            
+    class Cursor(object):
+        def __init__(self, data = []):
+            self.data = data
+            self.data.reverse()
+                
+        def setData(self, data):
+            self.data = data
+            self.data.reverse()
+
+        def execute(self,*args, **kwargs):
+            pass
+
+        def fetchall(self):
+            if self.data:
+                return self.data.pop()
+            return None
+            
+    def setReturn(self, data):
+        self.data = data
+            
+    def cursor(self):
+        return self.Cursor(self.data)
+    
+    def generate_md5sum(self, *args, **kwargs):
+        return MD5TESTSUM
+    
+    def checkFiles(self, *args, **kwargs):
+        return self.checkVals.pop()
+    
+    def log(self, *args, **kwargs):
+        return
 
 @contextmanager
 def capture_output():
@@ -87,32 +126,6 @@ class TestBackupUtil(unittest.TestCase):
         transfer_date = datetime.datetime(2018, 3, 16, 7, 8, 2)
         rootpath = 'my/root/path'
 
-        class MockUtil(object):
-            def __init__(self):
-                self.data = []
-            
-            class Cursor(object):
-                def __init__(self, data = []):
-                    self.data = data
-                    self.data.reverse()
-                
-                def setData(self, data):
-                    self.data = data
-                    self.data.reverse()
-
-                def execute(self,*args, **kwargs):
-                    pass
-
-                def fetchall(self):
-                    if self.data:
-                        return self.data.pop()
-                    return None
-            
-            def setReturn(self, data):
-                self.data = data
-            
-            def cursor(self):
-                return self.Cursor(self.data)
         myMock = MockUtil()
 
         # check for exception if not enough arguments are given
@@ -448,20 +461,20 @@ class TestBackupUtil(unittest.TestCase):
         self.assertFalse(util.ping())
         
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
-    def test_Util_reconnect(self) :
+    def test_Util_reconnect(self):
         bu.Util.__bases__ = (MockDbi,)
         util = bu.Util(None, None)
         util.reconnect()
 
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
-    def test_Util_init_logger(self) :
+    def test_Util_init_logger(self):
         bu.Util.__bases__ = (MockDbi,)
         util = bu.Util(None, None)
         
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
     @patch('archivetools.backup_util.MIMEText')
     @patch('archivetools.backup_util.smtplib')
-    def test_Util_notify(self, mimeMock, smtpMock) :
+    def test_Util_notify(self, mimeMock, smtpMock):
         bu.Util.__bases__ = (MockDbi,)
         util = bu.Util(None, None)
         with self.assertRaises(Exception):
@@ -477,7 +490,7 @@ class TestBackupUtil(unittest.TestCase):
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
     @patch('archivetools.backup_util.MIMEText')
     @patch('archivetools.backup_util.smtplib')
-    def test_Util_log(self, mimeMock, smtpMock) :
+    def test_Util_log(self, mimeMock, smtpMock):
         bu.Util.__bases__ = (MockDbi,)
         util = bu.Util(None, None, 'my.log', 'mytype')
         util.log(10,'my msg')
@@ -485,7 +498,7 @@ class TestBackupUtil(unittest.TestCase):
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
     @patch('archivetools.backup_util.MIMEText')
     @patch('archivetools.backup_util.smtplib')
-    def test_Util_checkfreespace(self, mimeMock, smtpMock) :
+    def test_Util_checkfreespace(self, mimeMock, smtpMock):
         bu.Util.__bases__ = (MockDbi,)
         util = bu.Util(None, None, 'my.log', 'mytype')
         self.assertTrue(util.checkfreespace('.'))
@@ -511,7 +524,7 @@ class TestBackupUtil(unittest.TestCase):
             self.assertTrue('Not implemented' in output)
 
     @patch('archivetools.backup_util.pyplot')
-    def test_Pie_init(self, plotMock) :
+    def test_Pie_init(self, plotMock):
         pl = bu.Pie('myfile',[1,2],['l1','l2'])
         pl = bu.Pie('myFile2',[1,2],['l1','l2'], colors=['red','yellow'])
         with self.assertRaises(Exception):
@@ -523,7 +536,7 @@ class TestBackupUtil(unittest.TestCase):
         pl.generate()
         
     @patch('archivetools.backup_util.pyplot')
-    def test_BoxPlot_init(self, plotMock) :
+    def test_BoxPlot_init(self, plotMock):
         bx = bu.BoxPlot('fname',[1,2,3])
         bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
         
@@ -544,9 +557,37 @@ class TestBackupUtil(unittest.TestCase):
         bx.generate()
         
 
-#class TestDES_tarball(unittest.TestCase) :
-    #def test_DES_tarball_init(self):
-    #    self.assertTrue(True)
+class TestDES_tarball(unittest.TestCase):
+
+    @patch('archivetools.DES_tarball.tarfile')
+    @patch('archivetools.DES_tarball.os')
+    def test_DES_tarball_init(self, tarMock, osMock):
+        theSize = 123456789
+        tarFile = 'myTest.tar'
+        thePath = '/the/tar/path'
+        theArgs = {'stgdir': '.'}
+        theItems = ['file.1', 'file.2']
+        myMock = MockUtil()
+
+        # basic init
+        with patch('archivetools.DES_tarball.os.path.getsize', return_value=theSize) as g:
+            with patch('archivetools.DES_tarball.os.getcwd', return_value='.') as gw:
+                test = dt.DES_tarball({}, [], tarFile, myMock, thePath, theSize, MD5TESTSUM)
+                self.assertEqual(test.tarfile, tarFile)
+                self.assertEqual(test.tar_size, theSize)
+                self.assertEqual(test.md5sum, MD5TESTSUM)
+        
+        # init with generating tarfile
+        with patch('archivetools.DES_tarball.os.path.getsize', return_value=theSize) as g:
+            with patch('archivetools.DES_tarball.os.getcwd', return_value='.') as gw:
+                with patch('archivetools.DES_tarball.bu.generate_md5sum', return_value=MD5TESTSUM) as gm:
+                    test = dt.DES_tarball(theArgs, theItems, {}, myMock, thePath, file_class=bu.CLASSES[0])
+                    self.assertEqual(test.md5sum, MD5TESTSUM)
+                    
+
+#os.path.getsize
+#os.getcwd
+#tarfile
         
     #def test_DES_tarball_ch_to_stage_dir(self):
     #    self.assertTrue(True)
