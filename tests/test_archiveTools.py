@@ -730,18 +730,38 @@ class TestArchiveSetup(unittest.TestCase):
                      ['/ddd', '', [filenames[2]]]],
                     [['/d12', '', filenames],
                      ['/d33', '', []],
-                     ['/ddd', '', [filenames[2]]]],
+                     ['/d55', '', [filenames[2]]]],
                     [['/d12', '', filenames],
                      ['/d33', '', []],
-                     ['/ddd', '', [filenames[2]]]]]
-        myMock.setReturn([((0,),),((0,),),((0,),),((0,),),((1,),),((0,),),((0,),),((0,),),((0,),)])
+                     ['/d66', '', [filenames[2]]]]]
+        myMock.setReturn([((0,),),((1,),),((0,),),((0,),),((0,),),((0,),),((0,),),((0,),),((0,),)])
         globs = [filenames, [filenames[2],], [filenames[1],],filenames, [filenames[2],], [filenames[1],],filenames, [filenames[2],], [filenames[1],]]
-        times = [time.time() - 100000., time.time() - 500., time.time() - 80000., time.time() - 500., time.time()-100000, time.time()-300.,time.time() - 100000., time.time() - 500., time.time() - 80000., time.time() - 500., time.time()-100000, time.time()-300.,time.time() - 100000., time.time() - 50000., time.time() - 80000., time.time() - 50000., time.time()-100000, time.time()-300000.]
+        times = [time.time() - 100000.,
+                 time.time() - 500.,
+                 time.time() - 80000.,
+                 time.time() - 500.,
+                 time.time() - 100000,
+                 time.time() - 300.,
+                 time.time() - 100000.,
+                 time.time() - 500.,
+                 time.time() - 8000000.,
+                 time.time() - 900000.,
+                 time.time() - 900000,
+                 time.time() - 300.,
+                 time.time() - 1000.,
+                 time.time() - 500.,
+                 time.time() - 80000.,
+                 time.time() - 5000.,
+                 time.time() - 100000,
+                 time.time() - 300000.]
+
         with patch('archive_setup.os.walk', side_effect=walkvals) as m:
             with patch('archive_setup.glob.glob', side_effect=globs) as gg:
                 with patch('archive_setup.os.path.getmtime', side_effect=times) as gtm:
                     with patch('archive_setup.os.path.getctime', side_effect=times) as gct:
                         aset.get_db(myMock.cursor(), myMock)
+                        print gtm.call_count
+                        print gct.call_count
 
     def test_get_sne(self):
         myMock = MockUtil()
