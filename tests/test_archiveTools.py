@@ -725,13 +725,19 @@ class TestArchiveSetup(unittest.TestCase):
         filenames = ['testfile.dat',
                      'anotherfile.dat',
                      'lasfile.d']
-        walkvals = [['/d12', '', filenames],
-                    ['/d33', '', 1],
-                    ['/ddd', '', [filenames[2]]]]
-
-        globs = [filenames, [], [filenames[2]]]
-        times = [time.time() - 100000., time.time() - 500., time.time() - 80000., time.time() - 500., time.time()-100000, time.time()-300.]
-        with patch('archive_setup.os.walk', return_value=walkvals) as m:
+        walkvals = [[['/d12', '', filenames],
+                     ['/d33', '', []],
+                     ['/ddd', '', [filenames[2]]]],
+                    [['/d12', '', filenames],
+                     ['/d33', '', []],
+                     ['/ddd', '', [filenames[2]]]],
+                    [['/d12', '', filenames],
+                     ['/d33', '', []],
+                     ['/ddd', '', [filenames[2]]]]]
+        myMock.setReturn([((0,),),((0,),),((0,),),((0,),),((1,),),((0,),),((0,),),((0,),),((0,),)])
+        globs = [filenames, [filenames[2],], [filenames[1],],filenames, [filenames[2],], [filenames[1],],filenames, [filenames[2],], [filenames[1],]]
+        times = [time.time() - 100000., time.time() - 500., time.time() - 80000., time.time() - 500., time.time()-100000, time.time()-300.,time.time() - 100000., time.time() - 500., time.time() - 80000., time.time() - 500., time.time()-100000, time.time()-300.,time.time() - 100000., time.time() - 50000., time.time() - 80000., time.time() - 50000., time.time()-100000, time.time()-300000.]
+        with patch('archive_setup.os.walk', side_effect=walkvals) as m:
             with patch('archive_setup.glob.glob', side_effect=globs) as gg:
                 with patch('archive_setup.os.path.getmtime', side_effect=times) as gtm:
                     with patch('archive_setup.os.path.getctime', side_effect=times) as gct:
