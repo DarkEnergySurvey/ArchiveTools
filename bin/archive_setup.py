@@ -168,7 +168,7 @@ def get_db(cur, util):
                 int(dbf[2])
             except ValueError:
                 continue
-            if len(fnames) == 0:
+            if not fnames == 0:
                 continue
             list_of_files = glob.glob('%s/*' % (root))
             # get last modified file time
