@@ -168,8 +168,8 @@ def get_db(cur, util):
                 int(dbf[2])
             except ValueError:
                 continue
-            if not fnames == 0:
-                continue
+            #if not fnames == 0:
+            #    continue
             list_of_files = glob.glob('%s/*' % (root))
             # get last modified file time
             lmtime = os.path.getmtime(max(list_of_files, key=os.path.getctime))
