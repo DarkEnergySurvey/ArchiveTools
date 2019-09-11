@@ -64,6 +64,7 @@ class MockUtil(object):
     def __init__(self):
         self.data = []
         self.checkVals = [True, False]
+        self.pingvals = [False, True, True]
 
     class Cursor(object):
         def __init__(self, data=[]):
@@ -85,6 +86,9 @@ class MockUtil(object):
         def prepare(self, *args, **kwargs):
             pass
 
+        def executemany(self, *args, **kwargs):
+            pass
+
     def setReturn(self, data):
         self.data = data
 
@@ -99,6 +103,9 @@ class MockUtil(object):
 
     def log(self, *args, **kwargs):
         return
+
+    def ping(self):
+        return self.pingvals.pop()
 
 @contextmanager
 def capture_output():
@@ -606,35 +613,76 @@ class TestDES_archive(unittest.TestCase):
         theArgs = {'stgdir': '.',
                    'xferdir': '.'}
 
-        myMock.setReturn([(('tar1.tar', 12345, MD5TESTSUM),
-                           ('tar1.tar', 456789, MD5TESTSUM + 'a'))])
+        myMock.setReturn([(('tar1.tar', 0, MD5TESTSUM),
+                           ('tar1.tar', 0, MD5TESTSUM + 'a'))])
         with patch('archivetools.DES_archive.DES_tarball.tar_size', return_value=101010) as ts:
             test = da.DES_archive(theArgs, myMock, bu.CLASSES[3], 2)
-
-
-    #def test_DES_archive_change_to_staging_dir(self):
-    #    self.assertTrue(True)
-
-    #def test_DES_archive_make_directory_tar(self):
-    #    self.assertTrue(True)
-
-    #def test_DES_archive_make_directory_tars(self):
-    #    self.assertTrue(True)
 
     #def test_DES_archive_generate(self):
     #    self.assertTrue(True)
 
-    #def test_DES_archive_update_db_tape(self):
-    #    self.assertTrue(True)
+    @patch('archivetools.DES_archive.os')
+    @patch('archivetools.DES_archive.DES_tarball')
+    def test_DES_archive_update_db_tape(self, osMock, tarMock):
+        myMock = MockUtil()
+        theArgs = {'stgdir': '.',
+                   'xferdir': '.'}
 
-    #def test_DES_archive_update_db_unit(self):
-    #    self.assertTrue(True)
+        myMock.setReturn([(('tar1.tar', 12345, MD5TESTSUM),
+                           ('tar1.tar', 456789, MD5TESTSUM + 'a'))])
+        with patch('archivetools.DES_archive.DES_tarball.tar_size', return_value=101010) as ts:
+            test = da.DES_archive(theArgs, myMock, bu.CLASSES[3], 2)
+            test.update_db_tape()
 
-    #def test_DES_archive_return_key_value(self):
-    #    self.assertTrue(True)
+    @patch('archivetools.DES_archive.os')
+    @patch('archivetools.DES_archive.DES_tarball')
+    def test_DES_archive_update_db_unit(self, osMock, tarMock):
+        myMock = MockUtil()
+        theArgs = {'stgdir': '.',
+                   'xferdir': '.'}
 
-    #def test_DES_archive_print_vars(self):
-    #    self.assertTrue(True)
+        myMock.setReturn([(('tar1.tar', 12345, MD5TESTSUM),
+                           ('tar1.tar', 456789, MD5TESTSUM + 'a'))])
+        with patch('archivetools.DES_archive.DES_tarball.tar_size', return_value=101010) as ts:
+            with patch('archivetools.DES_archive.DES_tarball') as tball:
+                instance = tball.return_value
+                instance.tarfile = 'myTar.tar'
+                instance.tar_size = 12345
+                instance.md5sum = MD5TESTSUM
+                instance.file_class = bu.CLASSES[3]
+                test = da.DES_archive(theArgs, myMock, bu.CLASSES[3], 2)
+                test.update_db_unit(instance, '/the/dir')
+
+    @patch('archivetools.DES_archive.os')
+    @patch('archivetools.DES_archive.DES_tarball')
+    def test_DES_archive_return_key_value(self, osMock, tarMock):
+        myMock = MockUtil()
+        theArgs = {'stgdir': '.',
+                   'xferdir': '.'}
+
+        myMock.setReturn([(('tar1.tar', 12345, MD5TESTSUM),
+                           ('tar1.tar', 456789, MD5TESTSUM + 'a'))])
+        with patch('archivetools.DES_archive.DES_tarball.tar_size', return_value=101010) as ts:
+            test = da.DES_archive(theArgs, myMock, bu.CLASSES[3], 2)
+            self.assertEqual(test.return_key_value('file_class'), bu.CLASSES[3])
+
+    @patch('archivetools.DES_archive.os')
+    @patch('archivetools.DES_archive.DES_tarball')
+    def test_DES_archive_print_vars(self, osMock, tarMock):
+        myMock = MockUtil()
+        theArgs = {'stgdir': '.',
+                   'xferdir': '.'}
+
+        myMock.setReturn([(('tar1.tar', 12345, MD5TESTSUM),
+                           ('tar1.tar', 456789, MD5TESTSUM + 'a'))])
+        with patch('archivetools.DES_archive.DES_tarball.tar_size', return_value=101010) as ts:
+            test = da.DES_archive(theArgs, myMock, bu.CLASSES[3], 2)
+            with capture_output() as (out, err):
+                test.print_vars()
+                output = out.getvalue()
+                for line in output:
+                    if 'file_class' in line:
+                        self.assertTrue(bu.CLASSES[3] in line)
 
 #class TestArchiveSetup(unittest.TestCase):
     #def test_main(self):
