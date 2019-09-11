@@ -727,7 +727,7 @@ class TestArchiveSetup(unittest.TestCase):
         myMock.setReturn([(('20130101',),('20180619',),('20181125',))])
         mylist = []
 
-        aset.get_raw(myMock.cursor(), myMock, mylist)
+        aset.get_sne(myMock.cursor(), myMock, mylist)
         self.assertTrue('DTS' in mylist[0][0])
 
     def test_get_raw(self):
@@ -755,14 +755,17 @@ class TestArchiveSetup(unittest.TestCase):
         third = (archPath, 'JUNK', datetime.datetime(2018, 2, 3, 5, 23, 5), 'multiepoch', 'Y6', 0, 4455226677)
         fourth = (archPath, 'ACTIVE', datetime.datetime(2019, 4, 6, 2, 3, 0), 'sne', 'REPROC', 0, 9988776655)
         fifth = (archPath, 'ACTIVE', datetime.datetime(2019, 8, 25, 6, 0, 3), 'sne', 'y1', 0, 8877665544)
-        sixth = (archPath, 'NEW', datetime.datetime(2018, 5, 6, 8, 12, 40), 'sne', 'y2', 0, 4477339922)
+        sixth = (archPath, 'NEW', datetime.datetime(2018, 5, 6, 8, 12, 40), 'sne', 'y3', 0, 4477339922)
         seventh = (archPath, 'ACTIVE', datetime.datetime(2016, 4, 3, 9, 25, 6), 'firstcut', 'Y2', 2, 2233883377)
         eighth = (archPath, 'ACTIVE', datetime.datetime(2018, 4, 9, 18, 5, 22), 'photoz', 'YY', 0, 9988776600)
         nineth = (archPath, 'ACTIVE', datetime.datetime(2017, 11, 7, 22, 3, 46), 'prebpm', 'YY', 1, 2345987353)
         tenth = (archPath, 'ACTIVE', datetime.datetime(2018, 5, 7, 0, 0, 1), 'precal', 'Y2', 0, 33885)
         eleventh = (archPath, 'ACTIVE', datetime.datetime(2018, 2, 1, 18, 4, 0), 'supercal', 'Y5', 0, 8855774488)
         twelfth = (archPath, 'ACTIVE', datetime.datetime(2017, 5, 3, 9, 7, 55), 'RAW', 'Y4', 0, 448833)
-        myMock.setReturn([(first, second, third, fourth, fifth, sixth, seventh, eighth, nineth, tenth, eleventh, twelfth)])
+        thirteenth = (archPath, 'ACTIVE', datetime.datetime(2019, 3, 16, 22, 5, 6), 'RAW', None, 0, 11228855)
+
+        myMock.setReturn([(first, second, third, fourth, fifth, sixth, seventh, eighth, nineth, tenth, eleventh, twelfth, thirteenth)])
+
 
         mylist = []
         aset.add_dirs(myMock.cursor(), myMock, mylist)
