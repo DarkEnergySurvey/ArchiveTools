@@ -64,7 +64,7 @@ class MockUtil(object):
     def __init__(self):
         self.data = []
         self.checkVals = [True, False]
-        self.pingvals = [False, True, True]
+        self.pingvals = [True, True, False]
 
     class Cursor(object):
         def __init__(self, data=[]):
@@ -106,6 +106,9 @@ class MockUtil(object):
 
     def ping(self):
         return self.pingvals.pop()
+
+    def reconnect(self):
+        pass
 
 @contextmanager
 def capture_output():
@@ -618,8 +621,20 @@ class TestDES_archive(unittest.TestCase):
         with patch('archivetools.DES_archive.DES_tarball.tar_size', return_value=101010) as ts:
             test = da.DES_archive(theArgs, myMock, bu.CLASSES[3], 2)
 
-    #def test_DES_archive_generate(self):
-    #    self.assertTrue(True)
+    @patch('archivetools.DES_archive.os')
+    @patch('archivetools.DES_archive.DES_tarball')
+    def test_DES_archive_generate(self, osMock, tarMock):
+        myMock = MockUtil()
+        theArgs = {'stgdir': '.',
+                   'xferdir': '.'}
+
+        myMock.setReturn([(('tar1.tar', 12345, MD5TESTSUM),
+                           ('tar1.tar', 456789, MD5TESTSUM + 'a'))])
+        with patch('archivetools.DES_archive.DES_tarball.tar_size', return_value=101010) as ts:
+            test = da.DES_archive(theArgs, myMock, bu.CLASSES[3], 2)
+            test.generate()
+            test.generate()
+
 
     @patch('archivetools.DES_archive.os')
     @patch('archivetools.DES_archive.DES_tarball')
