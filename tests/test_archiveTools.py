@@ -63,12 +63,12 @@ class MockUtil(object):
     def __init__(self):
         self.data = []
         self.ckeckVals = [True,False]
-            
+
     class Cursor(object):
         def __init__(self, data = []):
             self.data = data
             self.data.reverse()
-                
+
         def setData(self, data):
             self.data = data
             self.data.reverse()
@@ -80,22 +80,22 @@ class MockUtil(object):
             if self.data:
                 return self.data.pop()
             return None
-        
+
         def prepare(self, *args, **kwargs):
             pass
-            
+
     def setReturn(self, data):
         self.data = data
-            
+
     def cursor(self):
         return self.Cursor(self.data)
-    
+
     def generate_md5sum(self, *args, **kwargs):
         return MD5TESTSUM
-    
+
     def checkFiles(self, *args, **kwargs):
         return self.checkVals.pop()
-    
+
     def log(self, *args, **kwargs):
         return
 
@@ -115,7 +115,7 @@ class TestBackupUtil(unittest.TestCase):
         self.assertEqual(bu.get_subdir('RAW_FILE'), 'DTS')
         self.assertEqual(bu.get_subdir('DB_BACKUPSTUFF'), 'DB')
         self.assertEqual(bu.get_subdir('ANYTHING_ELSE'), 'OPS')
-    
+
     def test_locate(self):
         archive_root = '/archive/root'
         unit_name = 'testUnit'
@@ -337,7 +337,7 @@ class TestBackupUtil(unittest.TestCase):
     def test_generate_md5sum(self):
         # test on a pre-generated file
         self.assertEqual(bu.generate_md5sum('tests/test.file'), '9a6944ab3ae1ab7843629a8e4d167bfb')
-        
+
     def test_calculate_archive_size(self):
         b = 5
         kb = 3
@@ -372,7 +372,7 @@ class TestBackupUtil(unittest.TestCase):
         self.assertEqual(bu.calculate_archive_size('%iP' % pb), pbyte)
         # test for unsupported size
         self.assertEqual(bu.calculate_archive_size('%ix' % b), byte)
-    
+
     def test_srmls(self):
         # test for blank file
         with patch('archivetools.backup_util.Util') as Ut:
@@ -441,13 +441,13 @@ class TestBackupUtil(unittest.TestCase):
             with patch('archivetools.backup_util.os.walk', return_value=walkvals) as m:
                 with patch('archivetools.backup_util.generate_md5sum', side_effect=md5s) as md:
                     self.assertTrue(bu.check_files(data,'tt', 'ac.tar', utilPatch))
-        
+
         # now test a failure
         with patch('archivetools.backup_util.tarfile.open') as tarpatch:
             with patch('archivetools.backup_util.os.walk', return_value=walkvals) as m:
                 with patch('archivetools.backup_util.generate_md5sum', side_effect=badmd5) as md:
                     self.assertFalse(bu.check_files(data,'tt', 'ac.tar', utilPatch))
-        
+
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
     def test_Util_init(self):
         bu.Util.__bases__ = (MockDbi,)
@@ -462,7 +462,7 @@ class TestBackupUtil(unittest.TestCase):
 
         util.setThrow(True)
         self.assertFalse(util.ping())
-        
+
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
     def test_Util_reconnect(self):
         bu.Util.__bases__ = (MockDbi,)
@@ -473,7 +473,7 @@ class TestBackupUtil(unittest.TestCase):
     def test_Util_init_logger(self):
         bu.Util.__bases__ = (MockDbi,)
         util = bu.Util(None, None)
-        
+
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
     @patch('archivetools.backup_util.MIMEText')
     @patch('archivetools.backup_util.smtplib')
@@ -497,7 +497,7 @@ class TestBackupUtil(unittest.TestCase):
         bu.Util.__bases__ = (MockDbi,)
         util = bu.Util(None, None, 'my.log', 'mytype')
         util.log(10,'my msg')
-        
+
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
     @patch('archivetools.backup_util.MIMEText')
     @patch('archivetools.backup_util.smtplib')
@@ -512,7 +512,7 @@ class TestBackupUtil(unittest.TestCase):
     def test_Plot_init(self, plotMock):
         pl = bu.Plot('myfile')
         pl2 = bu.Plot('myfile2', 'TitleS')
-        
+
     @patch('archivetools.backup_util.pyplot')
     def test_Plot_save(self, plotMock):
         pl = bu.Plot('myfile')
@@ -537,18 +537,18 @@ class TestBackupUtil(unittest.TestCase):
     def test_Pie_generate(self, plotMock):
         pl = bu.Pie('myfile',[1,2],['l1','l2'])
         pl.generate()
-        
+
     @patch('archivetools.backup_util.pyplot')
     def test_BoxPlot_init(self, plotMock):
         bx = bu.BoxPlot('fname',[1,2,3])
         bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
-        
+
     @patch('archivetools.backup_util.pyplot')
     def test_BoxPlot_add_ydata(self, plotMock):
         bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
         bx.add_ydata([4,5])
         bx.add_ydata([6,7], legend="my label")
-        
+
     @patch('archivetools.backup_util.pyplot')
     def test_BoxPlot_generate(self, plotMock):
         bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
@@ -558,7 +558,7 @@ class TestBackupUtil(unittest.TestCase):
         bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',xdate=True, dodots=True)
         bx.add_ydata([4,5],legend='lgnd1')
         bx.generate()
-        
+
 
 class TestDES_tarball(unittest.TestCase):
 
@@ -579,7 +579,7 @@ class TestDES_tarball(unittest.TestCase):
                 self.assertEqual(test.get_tar_name(), tarFile)
                 self.assertEqual(test.get_filesize(), theSize)
                 self.assertEqual(test.get_md5sum(), MD5TESTSUM)
-        
+
         # init with generating tarfile
         with patch('archivetools.DES_tarball.os.path.getsize', return_value=theSize) as g:
             with patch('archivetools.DES_tarball.os.getcwd', return_value='.') as gw:
@@ -607,321 +607,317 @@ class TestDES_archive(unittest.TestCase):
         theArgs = {'stgdir': '.',
                    'xferdir': '.'}
 
-        myMock.setReturn([(('tar1.tar',12345,MD5TESTSUM),
+        myMock.setReturn([(('tar1.tar', 12345, MD5TESTSUM),
                           ('tar1.tar', 456789, MD5TESTSUM + 'a'))])
         with patch('archivetools.DES_archive.DES_tarball.tar_size', return_value=101010) as ts:
             test = da.DES_archive(theArgs, myMock, bu.CLASSES[3], 2)
 
-        
+
     #def test_DES_archive_change_to_staging_dir(self):
     #    self.assertTrue(True)
-        
+
     #def test_DES_archive_make_directory_tar(self):
     #    self.assertTrue(True)
-        
+
     #def test_DES_archive_make_directory_tars(self):
     #    self.assertTrue(True)
-        
+
     #def test_DES_archive_generate(self):
     #    self.assertTrue(True)
-        
+
     #def test_DES_archive_update_db_tape(self):
     #    self.assertTrue(True)
-        
+
     #def test_DES_archive_update_db_unit(self):
     #    self.assertTrue(True)
-        
+
     #def test_DES_archive_return_key_value(self):
     #    self.assertTrue(True)
-        
+
     #def test_DES_archive_print_vars(self):
     #    self.assertTrue(True)
-        
-    #def test_DES_archive_restore(self):
-    #    self.assertTrue(True)
-        
 
 #class TestArchiveSetup(unittest.TestCase):
     #def test_main(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_db(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_sne(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_raw(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_all_raw(self):
     #    self.assertTrue(True)
-        
+
     #def test_add_dirs(self):
     #    self.assertTrue(True)
-        
+
     #def test_junk_runs(self):
     #    self.assertTrue(True)
-        
+
     #def test_parse_options(self):
     #    self.assertTrue(True)
-        
+
 
 #class TestHungjobs(unittest.TestCase):
     #def test_parse_cmdline(self):
     #    self.assertTrue(True)
-        
+
     #def test_query_attempts(self):
     #    self.assertTrue(True)
-        
+
     #def test_query_tasks(self):
     #    self.assertTrue(True)
-        
+
     #def test_connect(self):
     #    self.assertTrue(True)
-        
+
     #def test_make_tree(self):
     #    self.assertTrue(True)
-        
+
     #def test_write_tree(self):
     #    self.assertTrue(True)
-        
+
     #def test_find_hung(self):
     #    self.assertTrue(True)
-        
+
     #def test_find_trans_hung(self):
     #    self.assertTrue(True)
-        
+
     #def test_main(self):
     #    self.assertTrue(True)
-        
+
 
 #class TestJobmonitor(unittest.TestCase):
     #def test_Task_init(self):
     #    self.assertTrue(True)
-        
+
     #def test_Task_add_child(self):
     #    self.assertTrue(True)
-        
+
     #def test_Task_str(self):
     #    self.assertTrue(True)
-        
+
     #def test_Task_is_running(self):
     #    self.assertTrue(True)
-        
+
     #def test_Task_len(self):
     #    self.assertTrue(True)
-        
+
     #def test_Task_last(self):
     #    self.assertTrue(True)
-        
+
     #def test_Print_init(self):
     #    self.assertTrue(True)
-        
+
     #def test_Print_write(self):
     #    self.assertTrue(True)
-        
+
     #def test_Print_close(self):
     #    self.assertTrue(True)
-        
+
     #def test_Print_flush(self):
     #    self.assertTrue(True)
-        
+
     #def test_Err_init(self):
     #    self.assertTrue(True)
-        
+
     #def test_Err_write(self):
     #    self.assertTrue(True)
-        
+
     #def test_Err_close(self):
     #    self.assertTrue(True)
-        
+
     #def test_Err_flush(self):
     #    self.assertTrue(True)
-        
+
     #def test_parse_cmdline(self):
     #    self.assertTrue(True)
-        
+
     #def test_query_attempts(self):
     #    self.assertTrue(True)
-        
+
     #def test_save_att_taskids(self):
     #    self.assertTrue(True)
-        
+
     #def test_query_tasks(self):
     #    self.assertTrue(True)
-        
+
     #def test_connect(self):
     #    self.assertTrue(True)
-        
+
     #def test_make_tree(self):
     #    self.assertTrue(True)
-        
+
     #def test_write_tree(self):
     #    self.assertTrue(True)
-        
+
     #def test_header(self):
     #    self.assertTrue(True)
-        
+
     #def test_find_hung(self):
     #    self.assertTrue(True)
-        
+
     #def test_h2(self):
     #    self.assertTrue(True)
-        
+
     #def test_find_trans_hung(self):
     #    self.assertTrue(True)
-        
+
     #def test_main(self):
     #    self.assertTrue(True)
-        
+
 
 #class TestMonitor(unittest.TestCase):
     #def test_ProcMon_init(self):
     #    self.assertTrue(True)
-        
+
     #def test_parse_options(self):
     #    self.assertTrue(True)
-        
+
     #def test_getproc(self):
     #    self.assertTrue(True)
-        
+
     #def test_proc(self):
     #    self.assertTrue(True)
-        
+
     #def test_todatetime(self):
     #    self.assertTrue(True)
-        
+
     #def test_monitorp(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_size(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_size_db(self):
     #    self.assertTrue(True)
-        
+
     #def test_df(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_tape_data(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_backupdir_data(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_deprecated(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_database(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_untransferred(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_total_data(self):
     #    self.assertTrue(True)
-        
+
     #def test_report_processes(self):
     #    self.assertTrue(True)
-        
+
     #def test_report_untransferred(self):
     #    self.assertTrue(True)
-        
+
     #def test_report_archive_status(self):
     #    self.assertTrue(True)
-        
+
     #def test_historical(self):
     #    self.assertTrue(True)
-        
+
     #def test_get_db_holdings(self):
     #    self.assertTrue(True)
-        
+
     #def test_db_status(self):
     #    self.assertTrue(True)
-        
+
     #def test_main(self):
     #    self.assertTrue(True)
-        
+
 
 #class TestRestore_file(unittest.TestCase):
     #def test_get_tape(self):
     #    self.assertTrue(True)
-        
+
     #def test_restore_files(self):
     #    self.assertTrue(True)
-        
+
     #def test_main(self):
     #    self.assertTrue(True)
-        
+
 
 #class TestRun_backup_db(unittest.TestCase):
     #def test_parse_options(self):
     #    self.assertTrue(True)
-        
+
     #def test_archive_files(self):
     #    self.assertTrue(True)
-        
+
     #def test_main(self):
     #    self.assertTrue(True)
-        
+
 
 #class TestRun_backup(unittest.TestCase):
     #def test_parse_options(self):
     #    self.assertTrue(True)
-        
+
     #def test_archive_files(self):
     #    self.assertTrue(True)
-        
+
     #def test_main(self):
     #    self.assertTrue(True)
-        
+
 
 #class TestTrack(unittest.TestCase):
     #def test_parse_cmdline(self):
     #    self.assertTrue(True)
-        
+
     #def test_query_attempts(self):
     #    self.assertTrue(True)
-        
+
     #def test_save_att_taskids(self):
     #    self.assertTrue(True)
-        
+
     #def test_query_tasks(self):
     #    self.assertTrue(True)
-        
+
     #def test_connectmake_tree(self):
     #    self.assertTrue(True)
-        
+
     #def test_write_tree(self):
     #    self.assertTrue(True)
-        
+
     #def test_find_hung(self):
     #    self.assertTrue(True)
-        
+
     #def test_find_trans_hung(self):
     #    self.assertTrue(True)
-        
+
     #def test_main(self):
     #    self.assertTrue(True)
-        
+
 
 #class TestTransfer(unittest.TestCase):
     #def test_parse_options(self):
     #    self.assertTrue(True)
-        
+
     #def test_Transfer_init(self):
     #    self.assertTrue(True)
-        
+
     #def test_Transfer_transfer(self):
     #    self.assertTrue(True)
-        
+
     #def test_Transfer_get_tries(self):
     #    self.assertTrue(True)
-        
+
     #def test_main(self):
     #    self.assertTrue(True)
-        
+
 
 class TestWhereis(unittest.TestCase):
     def test_parse_options(self):
@@ -943,7 +939,7 @@ class TestWhereis(unittest.TestCase):
         self.assertEqual(args['filename'], filename)
         self.assertEqual(args['archive'], 'desar2home')
         sys.argv = temp
-    
+
     @patch('where_is.Util')
     def test_main(self, mockUitl):
         # test for no archiving of the file yet
@@ -1036,7 +1032,7 @@ class TestWhereis(unittest.TestCase):
                 self.assertTrue(section in output)
 
         sys.argv = temp
-        
-    
+
+
 if __name__ == '__main__':
     unittest.main()
