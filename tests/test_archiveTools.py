@@ -803,13 +803,14 @@ class TestArchiveSetup(unittest.TestCase):
         twelfth = (archPath, 'ACTIVE', datetime.datetime(2017, 5, 3, 9, 7, 55), 'RAW', 'Y4', 0, 448833)
         thirteenth = (archPath, 'ACTIVE', datetime.datetime(2019, 3, 16, 22, 5, 6), 'RAW', None, 0, 11228855)
         fourteenth = (archPath, 'NEW', datetime.datetime(2018, 5, 6, 8, 12, 40), 'sne', 'y2', 0, 4477339922)
+        fifteenth = (archPath, 'ACTIVE', datetime.datetime(2019, 8, 25, 6, 0, 3), 'sne', 'y1y2', 0, 8877665544)
 
-        myMock.setReturn([(first, second, third, fourth, fifth, sixth, seventh, eighth, nineth, tenth, eleventh, twelfth, thirteenth, first)])
+        myMock.setReturn([(first, second, third, fourth, fifth, sixth, seventh, eighth, nineth, tenth, eleventh, twelfth, thirteenth, first, fifteenth)])
 
 
         mylist = []
         aset.add_dirs(myMock.cursor(), myMock, mylist)
-        self.assertEqual(len(mylist), 11)
+        self.assertEqual(len(mylist), 12)
         self.assertEqual(mylist[10][3], 10)
         self.assertEqual(mylist[2][3], 2)
 

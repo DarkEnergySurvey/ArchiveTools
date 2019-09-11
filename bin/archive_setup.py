@@ -196,7 +196,7 @@ def get_db(cur, util):
     cur.executemany(None, dbfiles)
     util.log(Util.info, "  Added %i database files" % (len(dbfiles)))
 
-def main():
+def main():  # pragma: no cover
     """ Main code block
     """
     util = None
