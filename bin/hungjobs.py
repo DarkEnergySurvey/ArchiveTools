@@ -71,7 +71,7 @@ def query_attempts(dbh, pipeline, days, html):
     attinfo = {}
     for row in curs:
         dat = dict(zip(desc, row))
-        #print d
+        #print dat
         attinfo[dat['task_id']] = dat
     #print "TIME1 ", time.time() - a
     html.write("  Number of attempts = %i" % len(attinfo))
@@ -350,7 +350,7 @@ def find_trans_hung(attinfo, taskinfo, html):
         html.write('</table>')
 
 ######################################################################
-def main(argv):
+def main(argv):  # pragma: no cover
     """ Main entry point
 
         Parameters

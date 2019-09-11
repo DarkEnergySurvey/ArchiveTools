@@ -15,17 +15,25 @@ matplotlib.use('PS')
 from archivetools import backup_util as bu
 from archivetools import DES_tarball as dt
 from archivetools import DES_archive as da
+
 sys.path.append('bin')
 sys.path.append('tests')
 import where_is as wis
 import archive_setup as aset
-
+import hungjobs
 
 MD5TESTSUM = '23d899a47f09b776213ae'
 
 class MockDbi(object):
     def __init__(self, *args, **kwargs):
-        self.data = [(('the_root',),)]
+        if 'data' in kwargs.keys() and kwargs['data']:
+            self.data = kwargs['data']
+        else:
+            self.data = [(('the_root',),)]
+        if 'descr' in kwargs.keys():
+            self.descr = kwargs['descr']
+        else :
+            self.descr = {}
         self.con = self.Connection()
         self._curs = None
         self.count = {'cursor': 0,
@@ -40,7 +48,7 @@ class MockDbi(object):
             return self._curs.getCount(attrib)
 
     def cursor(self):
-        self._curs = self.Cursor(self.data)
+        self._curs = self.Cursor(self.data, self.descr)
         self.count['cursor'] += 1
         return self._curs
 
@@ -62,13 +70,24 @@ class MockDbi(object):
             return True
 
     class Cursor(object):
-        def __init__(self, data = []):
+        def __init__(self, data=[], descr={}):
             self.data = data
             self.data.reverse()
+            self.description = descr
             self.count = {'execute': 0,
                           'fetchall': 0,
                           'prepare': 0,
                           'executemany': 0}
+            self._idx = 0
+
+        def next(self):
+            if self._idx < len(self.data):
+                self._idx += 1
+                return self.data[self._idx - 1]
+            raise StopIteration
+
+        def __iter__(self):
+            return self
 
         def getCount(self, attrib):
             return self.count[attrib]
@@ -96,13 +115,16 @@ class MockDbi(object):
     def setReturn(self, data):
         self.data = data
 
+    def setDescription(self, descr):
+        self.descr = descr
+
     def commit(self):
         self.count['commit'] += 1
 
 class MockUtil(MagicMock, MockDbi):
-    def __init__(self, data=[]):
+    def __init__(self, data=[], descr={}):
         MagicMock.__init__(self)
-        MockDbi.__init__(self, data)
+        MockDbi.__init__(self, data=data, descr=descr)
         self.checkVals = [True, False]
         self.pingvals = [True, True, False]
 
@@ -836,11 +858,46 @@ class TestArchiveSetup(unittest.TestCase):
         sys.argv = temp
 
 #class TestHungjobs(unittest.TestCase):
-    #def test_parse_cmdline(self):
-    #    self.assertTrue(True)
+    def test_parse_cmdline(self):
+        svcs = 'my.ini'
+        fname = 'myfile.html'
+        section = 'db_sec'
+        argv = ['--days=7',
+                '--file=%s' % fname,
+                '--des_services=%s' % svcs,
+                '--section=%s' % section,
+               ]
+        args = hungjobs.parse_cmdline(argv)
+        self.assertEqual(args['des_services'], svcs)
+        self.assertEqual(args['section'], section)
+        self.assertEqual(int(args['days']), 7)
 
-    #def test_query_attempts(self):
-    #    self.assertTrue(True)
+        argv = ['--file=%s' % fname,
+                '--des_services=%s' % svcs,
+                '--section=%s' % section,
+               ]
+        args = hungjobs.parse_cmdline(argv)
+        self.assertEqual(args['des_services'], svcs)
+        self.assertEqual(args['section'], section)
+        self.assertEqual(int(args['days']), 3)
+
+    def test_query_attempts(self):
+        results = [('finalcut', 'U1', 5520, 1, 88776655, '/main/path', datetime.datetime(2018, 3, 3, 4, 5, 6), datetime.datetime(2018, 3, 5, 4, 4, 4), 0, 88779900),
+                   ('firstcut', 'U3', 110, 5, 99330, '/main/path/3', datetime.datetime(2018, 3, 9, 18, 20, 0),
+                   None, None, 16222)]
+        descr = [['pipeline', 0],
+                 ['unitname', 0],
+                 ['reqnum', 0],
+                 ['attnum', 0],
+                 ['task_id', 0],
+                 ['archive_path', 0],
+                 ['start_time', 0],
+                 ['end_time', 0],
+                 ['status', 0],
+                 ['pfwid', 0]]
+        myMock = MockDbi(data=results, descr=descr)
+        ati = hungjobs.query_attempts(myMock, None, '4', MagicMock())
+        self.assertEqual(len(ati), 2)
 
     #def test_query_tasks(self):
     #    self.assertTrue(True)
