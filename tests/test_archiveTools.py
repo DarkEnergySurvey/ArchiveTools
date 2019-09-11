@@ -3,7 +3,7 @@ import matplotlib
 import unittest
 from contextlib import contextmanager
 from StringIO import StringIO
-from mock import patch, mock_open
+from mock import patch, mock_open, MagicMock
 import sys
 import os
 import copy
@@ -17,6 +17,7 @@ from archivetools import DES_archive as da
 sys.path.append('bin')
 sys.path.append('tests')
 import where_is as wis
+import archive_setup as aset
 
 
 MD5TESTSUM = '23d899a47f09b776213ae'
@@ -57,14 +58,28 @@ class MockDbi(object):
             if self.data:
                 return self.data.pop()
             return None
+
+        def prepare(self, *args, **kwargs):
+            pass
+
+        def executemany(self, *args, **kwargs):
+            pass
+
     def setReturn(self, data):
         self.data = data
 
-class MockUtil(object):
+class MockUtil(MagicMock, MockDbi):
     def __init__(self):
+        MagicMock.__init__(self)
+        MockDbi.__init__(self)
         self.data = []
         self.checkVals = [True, False]
         self.pingvals = [True, True, False]
+
+    def __call__(self, *args, **kwargs):
+        args = copy.deepcopy(args)
+        kwargs = copy.deepcopy(kwargs)
+        return super(MockUtil, self).__call__(*args, **kwargs)
 
     class Cursor(object):
         def __init__(self, data=[]):
@@ -89,11 +104,11 @@ class MockUtil(object):
         def executemany(self, *args, **kwargs):
             pass
 
-    def setReturn(self, data):
-        self.data = data
+    #def setReturn(self, data):
+    #    self.data = data
 
-    def cursor(self):
-        return self.Cursor(self.data)
+    #def cursor(self):
+    #    return self.Cursor(self.data)
 
     def generate_md5sum(self, *args, **kwargs):
         return MD5TESTSUM
@@ -699,7 +714,7 @@ class TestDES_archive(unittest.TestCase):
                     if 'file_class' in line:
                         self.assertTrue(bu.CLASSES[3] in line)
 
-#class TestArchiveSetup(unittest.TestCase):
+class TestArchiveSetup(unittest.TestCase):
     #def test_main(self):
     #    self.assertTrue(True)
 
@@ -718,12 +733,23 @@ class TestDES_archive(unittest.TestCase):
     #def test_add_dirs(self):
     #    self.assertTrue(True)
 
-    #def test_junk_runs(self):
-    #    self.assertTrue(True)
+    def test_junk_runs(self):
+        myMock = MockUtil()
 
-    #def test_parse_options(self):
-    #    self.assertTrue(True)
-
+    def test_parse_options(self):
+        temp = copy.deepcopy(sys.argv)
+        svcs = 'my.ini'
+        section = 'db_sec'
+        sys.argv = ['archive_setup.py',
+                    '--debug',
+                    '--des_services=%s' % svcs,
+                    '--section=%s' % section,
+                   ]
+        args = aset.parse_options()
+        self.assertTrue(args['debug'])
+        self.assertEqual(args['des_services'], svcs)
+        self.assertEqual(args['section'], section)
+        sys.argv = temp
 
 #class TestHungjobs(unittest.TestCase):
     #def test_parse_cmdline(self):
