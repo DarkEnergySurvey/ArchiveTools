@@ -568,42 +568,32 @@ class TestDES_tarball(unittest.TestCase):
         theArgs = {'stgdir': '.'}
         theItems = ['file.1', 'file.2']
         myMock = MockUtil()
-
+        checks = [False, True]
         # basic init
         with patch('archivetools.DES_tarball.os.path.getsize', return_value=theSize) as g:
             with patch('archivetools.DES_tarball.os.getcwd', return_value='.') as gw:
                 test = dt.DES_tarball({}, [], tarFile, myMock, thePath, theSize, MD5TESTSUM)
-                self.assertEqual(test.tarfile, tarFile)
-                self.assertEqual(test.tar_size, theSize)
-                self.assertEqual(test.md5sum, MD5TESTSUM)
+                self.assertEqual(test.get_tar_name(), tarFile)
+                self.assertEqual(test.get_filesize(), theSize)
+                self.assertEqual(test.get_md5sum(), MD5TESTSUM)
         
         # init with generating tarfile
         with patch('archivetools.DES_tarball.os.path.getsize', return_value=theSize) as g:
             with patch('archivetools.DES_tarball.os.getcwd', return_value='.') as gw:
                 with patch('archivetools.DES_tarball.bu.generate_md5sum', return_value=MD5TESTSUM) as gm:
                     test = dt.DES_tarball(theArgs, theItems, {}, myMock, thePath, file_class=bu.CLASSES[0])
-                    self.assertEqual(test.md5sum, MD5TESTSUM)
-                    
+                    self.assertEqual(test.get_md5sum(), MD5TESTSUM)
+                    self.assertNotEqual(test.get_tar_name(), tarFile)
 
-#os.path.getsize
-#os.getcwd
-#tarfile
-        
-    #def test_DES_tarball_ch_to_stage_dir(self):
-    #    self.assertTrue(True)
-        
-    #def test_DES_tarball_get_filesize(self):
-    #    self.assertTrue(True)
-        
-    #def test_DES_tarball_execute_tar(self):
-    #    self.assertTrue(True)
-        
-    #def test_DES_tarball_get_md5sum(self):
-    #    self.assertTrue(True)
-        
-    #def test_DES_tarball_get_tar_name(self):
-    #    self.assertTrue(True)
-        
+        # verify file size
+        # init with generating tarfile
+        with patch('archivetools.DES_tarball.os.path.getsize', return_value=theSize) as g:
+            with patch('archivetools.DES_tarball.os.getcwd', return_value='.') as gw:
+                with patch('archivetools.DES_tarball.bu.generate_md5sum', return_value=MD5TESTSUM) as gm:
+                    with patch('archivetools.DES_tarball.bu.check_files', side_effect=checks) as cf:
+                        test = dt.DES_tarball(theArgs, theItems, {}, myMock, thePath, file_class=bu.CLASSES[0], verify=True, tarname=tarFile)
+                        self.assertEqual(test.get_md5sum(), MD5TESTSUM)
+                        self.assertEqual(test.get_tar_name(), tarFile)
 
 #class TestDES_archive(unittest.TestCase):
     #def test_DES_archive_init(self):
