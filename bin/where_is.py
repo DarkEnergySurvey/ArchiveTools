@@ -41,7 +41,7 @@ def main():
     #util.connect(args['des_services'], args['section'])
     try:
         data = locate(util, args['filename'], args['reqnum'], args['unitname'],
-                         args['attnum'], args['pfwid'], args['path'], args['archive'])
+                      args['attnum'], args['pfwid'], args['path'], args['archive'])
         if data['unit'] and not data['tape']:
             print "Item is located in\n  Unit Tar: %s  created on %s\n and has not been added to a Tape Tar yet." % (data['unit'], data['unitdate'].strftime("%Y-%m-%d"))
         if data['tape']:
