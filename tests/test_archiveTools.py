@@ -7,6 +7,7 @@ from StringIO import StringIO
 from mock import patch, mock_open
 from archivetools import backup_util as bu
 from archivetools import DES_tarball as dt
+from archivetools import DES_archive as da
 import sys
 import copy
 import datetime
@@ -79,6 +80,9 @@ class MockUtil(object):
             if self.data:
                 return self.data.pop()
             return None
+        
+        def prepare(self, *args, **kwargs):
+            pass
             
     def setReturn(self, data):
         self.data = data
@@ -444,7 +448,6 @@ class TestBackupUtil(unittest.TestCase):
                 with patch('archivetools.backup_util.generate_md5sum', side_effect=badmd5) as md:
                     self.assertFalse(bu.check_files(data,'tt', 'ac.tar', utilPatch))
         
-#    #@patch.object('despydbdb.desdmdbi.DesDmDbi','__init__',(MockDbi.__init__(self),))
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
     def test_Util_init(self):
         bu.Util.__bases__ = (MockDbi,)
@@ -595,9 +598,20 @@ class TestDES_tarball(unittest.TestCase):
                         self.assertEqual(test.get_md5sum(), MD5TESTSUM)
                         self.assertEqual(test.get_tar_name(), tarFile)
 
-#class TestDES_archive(unittest.TestCase):
-    #def test_DES_archive_init(self):
-    #    self.assertTrue(True)
+class TestDES_archive(unittest.TestCase):
+
+    @patch('archivetools.DES_archive.os')
+    @patch('archivetools.DES_archive.DES_tarball')
+    def test_DES_archive_init(self, osMock, tarMock):
+        myMock = MockUtil()
+        theArgs = {'stgdir': '.',
+                   'xferdir': '.'}
+
+        myMock.setReturn([(('tar1.tar',12345,MD5TESTSUM),
+                          ('tar1.tar', 456789, MD5TESTSUM + 'a'))])
+        with patch('archivetools.DES_archive.DES_tarball.tar_size', return_value=101010) as ts:
+            test = da.DES_archive(theArgs, myMock, bu.CLASSES[3], 2)
+
         
     #def test_DES_archive_change_to_staging_dir(self):
     #    self.assertTrue(True)
