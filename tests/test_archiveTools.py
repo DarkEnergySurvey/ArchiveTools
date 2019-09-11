@@ -1,22 +1,23 @@
 #!/usr/bin/env python2
 import matplotlib
-matplotlib.use('PS')
 import unittest
 from contextlib import contextmanager
 from StringIO import StringIO
 from mock import patch, mock_open
+import sys
+import os
+import copy
+import datetime
+
+matplotlib.use('PS')
+
 from archivetools import backup_util as bu
 from archivetools import DES_tarball as dt
 from archivetools import DES_archive as da
-import sys
-import copy
-import datetime
 sys.path.append('bin')
 sys.path.append('tests')
-
-import os
-
 import where_is as wis
+
 
 MD5TESTSUM = '23d899a47f09b776213ae'
 
@@ -62,10 +63,10 @@ class MockDbi(object):
 class MockUtil(object):
     def __init__(self):
         self.data = []
-        self.ckeckVals = [True,False]
+        self.checkVals = [True, False]
 
     class Cursor(object):
-        def __init__(self, data = []):
+        def __init__(self, data=[]):
             self.data = data
             self.data.reverse()
 
@@ -73,7 +74,7 @@ class MockUtil(object):
             self.data = data
             self.data.reverse()
 
-        def execute(self,*args, **kwargs):
+        def execute(self, *args, **kwargs):
             pass
 
         def fetchall(self):
@@ -124,7 +125,7 @@ class TestBackupUtil(unittest.TestCase):
         file_path = 'file/path'
         fileNoPath = ((archive_path,),)
         filePath = ((file_path, archive_path,),)
-        created_date = datetime.datetime(2018, 3, 15, 15, 47,20)
+        created_date = datetime.datetime(2018, 3, 15, 15, 47, 20)
         tape_tar = 'theTape.tar'
         tape_date = datetime.datetime(2018, 3, 16, 0, 22, 8)
         transfer_date = datetime.datetime(2018, 3, 16, 7, 8, 2)
@@ -146,7 +147,7 @@ class TestBackupUtil(unittest.TestCase):
 
         # check for exception if not enough arguments are given
         with self.assertRaises(ValueError):
-            bu.locate(myMock, unitname='uunm',attnum='2')
+            bu.locate(myMock, unitname='uunm', attnum='2')
 
         # get just file info
         myMock.setReturn([archive_root_rtn,
@@ -191,7 +192,7 @@ class TestBackupUtil(unittest.TestCase):
         # get just file info with pfwid, pfwid not existing
         myMock.setReturn([archive_root_rtn,
                           None])
-        results = bu.locate(myMock,  reqnum=12345, unitname='uun', attnum='2', archive='myarch')
+        results = bu.locate(myMock, reqnum=12345, unitname='uun', attnum='2', archive='myarch')
         self.assertEqual(results['arch_root'], archive_root)
         self.assertIsNone(results['path'])
         self.assertIsNone(results['unit'])
@@ -378,7 +379,7 @@ class TestBackupUtil(unittest.TestCase):
         with patch('archivetools.backup_util.Util') as Ut:
             with patch('archivetools.backup_util.os.system') as syspatch:
                 with patch('archivetools.backup_util.open', mock_open(read_data='')) as m:
-                    with capture_output() as (out,err):
+                    with capture_output() as (out, err):
                         with self.assertRaises(SystemExit):
                             bu.srmls('a', 'b', 'c', 'd', 0, Ut)
                         output = out.getvalue().strip()
@@ -387,7 +388,7 @@ class TestBackupUtil(unittest.TestCase):
         # test with blank file and Util
         with patch('archivetools.backup_util.os.system') as syspatch:
             with patch('archivetools.backup_util.open', mock_open(read_data='')) as m:
-                with capture_output() as (out,err):
+                with capture_output() as (out, err):
                     with self.assertRaises(SystemExit):
                         bu.srmls('a', 'b', 'c', 'd', 0, None)
                     output = out.getvalue().strip()
@@ -401,7 +402,7 @@ class TestBackupUtil(unittest.TestCase):
         # test with too small a file size and Util
         with patch('archivetools.backup_util.os.system') as syspatch:
             with patch('archivetools.backup_util.open', mock_open(read_data='12345 file size')) as m:
-                with capture_output() as (out,err):
+                with capture_output() as (out, err):
                     with self.assertRaises(SystemExit):
                         bu.srmls('a', 'b', 'c', 'd', 12346, Ut)
                     output = out.getvalue().strip()
@@ -411,7 +412,7 @@ class TestBackupUtil(unittest.TestCase):
         # test with too small a file size
         with patch('archivetools.backup_util.os.system') as syspatch:
             with patch('archivetools.backup_util.open', mock_open(read_data='12345 file size')) as m:
-                with capture_output() as (out,err):
+                with capture_output() as (out, err):
                     with self.assertRaises(SystemExit):
                         bu.srmls('a', 'b', 'c', 'd', 12346, None)
                     output = out.getvalue().strip()
@@ -440,13 +441,13 @@ class TestBackupUtil(unittest.TestCase):
         with patch('archivetools.backup_util.tarfile.open') as tarpatch:
             with patch('archivetools.backup_util.os.walk', return_value=walkvals) as m:
                 with patch('archivetools.backup_util.generate_md5sum', side_effect=md5s) as md:
-                    self.assertTrue(bu.check_files(data,'tt', 'ac.tar', utilPatch))
+                    self.assertTrue(bu.check_files(data, 'tt', 'ac.tar', utilPatch))
 
         # now test a failure
         with patch('archivetools.backup_util.tarfile.open') as tarpatch:
             with patch('archivetools.backup_util.os.walk', return_value=walkvals) as m:
                 with patch('archivetools.backup_util.generate_md5sum', side_effect=badmd5) as md:
-                    self.assertFalse(bu.check_files(data,'tt', 'ac.tar', utilPatch))
+                    self.assertFalse(bu.check_files(data, 'tt', 'ac.tar', utilPatch))
 
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
     def test_Util_init(self):
@@ -459,7 +460,6 @@ class TestBackupUtil(unittest.TestCase):
         bu.Util.__bases__ = (MockDbi,)
         util = bu.Util(None, None)
         self.assertTrue(util.ping())
-
         util.setThrow(True)
         self.assertFalse(util.ping())
 
@@ -481,7 +481,7 @@ class TestBackupUtil(unittest.TestCase):
         bu.Util.__bases__ = (MockDbi,)
         util = bu.Util(None, None)
         with self.assertRaises(Exception):
-            util.notify(1,'my msg')
+            util.notify(1, 'my msg')
         util = bu.Util(None, None, 'my.log', 'mytype')
         util.notify(1, 'my msg')
 
@@ -496,7 +496,7 @@ class TestBackupUtil(unittest.TestCase):
     def test_Util_log(self, mimeMock, smtpMock):
         bu.Util.__bases__ = (MockDbi,)
         util = bu.Util(None, None, 'my.log', 'mytype')
-        util.log(10,'my msg')
+        util.log(10, 'my msg')
 
     @patch('archivetools.backup_util.desdmdbi.DesDmDbi', MockDbi)
     @patch('archivetools.backup_util.MIMEText')
@@ -528,37 +528,36 @@ class TestBackupUtil(unittest.TestCase):
 
     @patch('archivetools.backup_util.pyplot')
     def test_Pie_init(self, plotMock):
-        pl = bu.Pie('myfile',[1,2],['l1','l2'])
-        pl = bu.Pie('myFile2',[1,2],['l1','l2'], colors=['red','yellow'])
+        pl = bu.Pie('myfile', [1, 2], ['l1', 'l2'])
+        pl = bu.Pie('myFile2', [1, 2], ['l1', 'l2'], colors=['red', 'yellow'])
         with self.assertRaises(Exception):
-            bu.Pie('myFile',[1,2,3],['l1','l2'])
+            bu.Pie('myFile', [1, 2, 3], ['l1', 'l2'])
 
     @patch('archivetools.backup_util.pyplot')
     def test_Pie_generate(self, plotMock):
-        pl = bu.Pie('myfile',[1,2],['l1','l2'])
+        pl = bu.Pie('myfile', [1, 2], ['l1', 'l2'])
         pl.generate()
 
     @patch('archivetools.backup_util.pyplot')
     def test_BoxPlot_init(self, plotMock):
-        bx = bu.BoxPlot('fname',[1,2,3])
-        bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
+        bx = bu.BoxPlot('fname', [1, 2, 3])
+        bx = bu.BoxPlot('fname', [1, 2, 3], xlabel='xlab', ylabel='ylab', colors=['red', 'green'])
 
     @patch('archivetools.backup_util.pyplot')
     def test_BoxPlot_add_ydata(self, plotMock):
-        bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
-        bx.add_ydata([4,5])
-        bx.add_ydata([6,7], legend="my label")
+        bx = bu.BoxPlot('fname', [1, 2, 3], xlabel='xlab', ylabel='ylab', colors=['red', 'green'])
+        bx.add_ydata([4, 5])
+        bx.add_ydata([6, 7], legend="my label")
 
     @patch('archivetools.backup_util.pyplot')
     def test_BoxPlot_generate(self, plotMock):
-        bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',colors=['red','green'])
-        bx.add_ydata([4,5])
+        bx = bu.BoxPlot('fname', [1, 2, 3], xlabel='xlab', ylabel='ylab', colors=['red', 'green'])
+        bx.add_ydata([4, 5])
         bx.generate()
 
-        bx = bu.BoxPlot('fname',[1,2,3], xlabel='xlab',ylabel='ylab',xdate=True, dodots=True)
-        bx.add_ydata([4,5],legend='lgnd1')
+        bx = bu.BoxPlot('fname', [1, 2, 3], xlabel='xlab', ylabel='ylab', xdate=True, dodots=True)
+        bx.add_ydata([4, 5], legend='lgnd1')
         bx.generate()
-
 
 class TestDES_tarball(unittest.TestCase):
 
@@ -608,7 +607,7 @@ class TestDES_archive(unittest.TestCase):
                    'xferdir': '.'}
 
         myMock.setReturn([(('tar1.tar', 12345, MD5TESTSUM),
-                          ('tar1.tar', 456789, MD5TESTSUM + 'a'))])
+                           ('tar1.tar', 456789, MD5TESTSUM + 'a'))])
         with patch('archivetools.DES_archive.DES_tarball.tar_size', return_value=101010) as ts:
             test = da.DES_archive(theArgs, myMock, bu.CLASSES[3], 2)
 
@@ -931,7 +930,7 @@ class TestWhereis(unittest.TestCase):
                     '--des_services=%s' % svcs,
                     '--section=%s' % section,
                     '--filename=%s' % filename
-        ]
+                   ]
         args = wis.parse_options()
         self.assertTrue(args['debug'])
         self.assertEqual(args['des_services'], svcs)
@@ -951,7 +950,7 @@ class TestWhereis(unittest.TestCase):
                     '--des_services=%s' % svcs,
                     '--section=%s' % section,
                     '--filename=%s' % filename
-        ]
+                   ]
         unitdate = datetime.datetime(2018, 6, 15, 20, 0, 18)
         transdate = datetime.datetime(2018, 6, 16, 3, 15, 25)
         tapedate = datetime.datetime(2018, 6, 16, 2, 55, 0)
@@ -966,7 +965,7 @@ class TestWhereis(unittest.TestCase):
                   'path': 'big/long/data/path'}
         with patch('where_is.locate') as mockLocate:
             mockLocate.return_value = onTape
-            with capture_output() as (out,err):
+            with capture_output() as (out, err):
                 wis.main()
                 output = out.getvalue().strip()
                 self.assertFalse(unitfile in output)
