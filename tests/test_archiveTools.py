@@ -100,9 +100,9 @@ class MockDbi(object):
         self.count['commit'] += 1
 
 class MockUtil(MagicMock, MockDbi):
-    def __init__(self):
+    def __init__(self, data=[]):
         MagicMock.__init__(self)
-        MockDbi.__init__(self)
+        MockDbi.__init__(self, data)
         self.checkVals = [True, False]
         self.pingvals = [True, True, False]
 
@@ -717,8 +717,7 @@ class TestDES_archive(unittest.TestCase):
                         self.assertTrue(bu.CLASSES[3] in line)
 
 class TestArchiveSetup(unittest.TestCase):
-    #def test_main(self):
-    #    self.assertTrue(True)
+    # no test of main()
 
     def test_get_db(self):
         myMock = MockUtil()
@@ -803,7 +802,7 @@ class TestArchiveSetup(unittest.TestCase):
         twelfth = (archPath, 'ACTIVE', datetime.datetime(2017, 5, 3, 9, 7, 55), 'RAW', 'Y4', 0, 448833)
         thirteenth = (archPath, 'ACTIVE', datetime.datetime(2019, 3, 16, 22, 5, 6), 'RAW', None, 0, 11228855)
         fourteenth = (archPath, 'NEW', datetime.datetime(2018, 5, 6, 8, 12, 40), 'sne', 'y2', 0, 4477339922)
-        fifteenth = (archPath, 'ACTIVE', datetime.datetime(2019, 8, 25, 6, 0, 3), 'sne', 'y1y2', 0, 8877665544)
+        fifteenth = (archPath, 'NEW', datetime.datetime(2019, 8, 25, 6, 0, 3), 'sne', 'y1y2', 0, 8877660044)
 
         myMock.setReturn([(first, second, third, fourth, fifth, sixth, seventh, eighth, nineth, tenth, eleventh, twelfth, thirteenth, first, fifteenth)])
 
@@ -813,6 +812,7 @@ class TestArchiveSetup(unittest.TestCase):
         self.assertEqual(len(mylist), 12)
         self.assertEqual(mylist[10][3], 10)
         self.assertEqual(mylist[2][3], 2)
+        print mylist[-1]
 
     def test_junk_runs(self):
         myMock = MockUtil()

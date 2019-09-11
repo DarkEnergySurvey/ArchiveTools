@@ -84,7 +84,7 @@ def add_dirs(cur, util, dirlist):
         elif "sne" in pipeline:
             if "REPROC" in camp:
                 priority = 2
-            elif "y1" not in camp and "y2" not in camp:
+            elif "Y1" not in camp and "Y2" not in camp:
                 priority = 4
         elif "firstcut" in pipeline or "supercal" in pipeline:
             priority = 3
