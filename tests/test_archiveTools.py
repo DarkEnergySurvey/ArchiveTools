@@ -26,9 +26,22 @@ class MockDbi(object):
     def __init__(self, *args, **kwargs):
         self.data = [(('the_root',),)]
         self.con = self.Connection()
+        self._curs = None
+        self.count = {'cursor': 0,
+                      'commit': 0}
+
+    def getCount(self, attrib):
+        if attrib in self.count.keys():
+            return self.count[attrib]
+        try:
+            return self.con.getCount(attrib)
+        except:
+            return self._curs.getCount(attrib)
 
     def cursor(self):
-        return self.Cursor(self.data)
+        self._curs = self.Cursor(self.data)
+        self.count['cursor'] += 1
+        return self._curs
 
     def setThrow(self, value):
         self.con.throw = value
@@ -36,8 +49,13 @@ class MockDbi(object):
     class Connection(object):
         def __init__(self):
             self.throw = False
+            self.count = {'ping': 0}
+
+        def getCount(self, attrib):
+            return self.count[attrib]
 
         def ping(self):
+            self.count['ping'] += 1
             if self.throw:
                 raise Exception()
             return True
@@ -46,69 +64,52 @@ class MockDbi(object):
         def __init__(self, data = []):
             self.data = data
             self.data.reverse()
+            self.count = {'execute': 0,
+                          'fetchall': 0,
+                          'prepare': 0,
+                          'executemany': 0}
+
+        def getCount(self, attrib):
+            return self.count[attrib]
 
         def setData(self, data):
             self.data = data
             self.data.reverse()
 
         def execute(self,*args, **kwargs):
-            pass
+            self.count['execute'] += 1
 
         def fetchall(self):
+            #print "DATA",self.data
+            self.count['fetchall'] += 1
             if self.data:
                 return self.data.pop()
             return None
 
         def prepare(self, *args, **kwargs):
-            pass
+            self.count['prepare'] += 1
 
         def executemany(self, *args, **kwargs):
-            pass
+            self.count['executemany'] += 1
 
     def setReturn(self, data):
         self.data = data
+
+    def commit(self):
+        self.count['commit'] += 1
 
 class MockUtil(MagicMock, MockDbi):
     def __init__(self):
         MagicMock.__init__(self)
         MockDbi.__init__(self)
-        self.data = []
         self.checkVals = [True, False]
         self.pingvals = [True, True, False]
 
     def __call__(self, *args, **kwargs):
+        print "CALLING"
         args = copy.deepcopy(args)
         kwargs = copy.deepcopy(kwargs)
         return super(MockUtil, self).__call__(*args, **kwargs)
-
-    class Cursor(object):
-        def __init__(self, data=[]):
-            self.data = data
-            self.data.reverse()
-
-        def setData(self, data):
-            self.data = data
-            self.data.reverse()
-
-        def execute(self, *args, **kwargs):
-            pass
-
-        def fetchall(self):
-            if self.data:
-                return self.data.pop()
-            return None
-
-        def prepare(self, *args, **kwargs):
-            pass
-
-        def executemany(self, *args, **kwargs):
-            pass
-
-    #def setReturn(self, data):
-    #    self.data = data
-
-    #def cursor(self):
-    #    return self.Cursor(self.data)
 
     def generate_md5sum(self, *args, **kwargs):
         return MD5TESTSUM
@@ -719,22 +720,61 @@ class TestArchiveSetup(unittest.TestCase):
     #    self.assertTrue(True)
 
     #def test_get_db(self):
-    #    self.assertTrue(True)
 
-    #def test_get_sne(self):
-    #    self.assertTrue(True)
 
-    #def test_get_raw(self):
-    #    self.assertTrue(True)
+    def test_get_sne(self):
+        myMock = MockUtil()
+        myMock.setReturn([(('20130101',),('20180619',),('20181125',))])
+        mylist = []
 
-    #def test_get_all_raw(self):
-    #    self.assertTrue(True)
+        aset.get_raw(myMock.cursor(), myMock, mylist)
+        self.assertTrue('DTS' in mylist[0][0])
 
-    #def test_add_dirs(self):
-    #    self.assertTrue(True)
+    def test_get_raw(self):
+        myMock = MockUtil()
+        myMock.setReturn([(('20130101',),('20180619',),('20181125',))])
+        mylist = []
+
+        aset.get_raw(myMock.cursor(), myMock, mylist)
+        self.assertTrue('DTS' in mylist[0][0])
+
+    def test_get_all_raw(self):
+        myMock = MockUtil()
+        myMock.setReturn([(('20130101',),('20180619',),('20181125',))])
+        mylist = []
+
+        count = aset.get_all_raw(myMock.cursor(), 'select nite from exposure', 'sne', mylist)
+        self.assertEqual(count, 2)
+        self.assertTrue('DTS' in mylist[0][0])
+
+    def test_add_dirs(self):
+        myMock = MockUtil()
+        archPath = '/the/archive/path'
+        first = (archPath, 'NEW', datetime.datetime(2018, 12, 14, 5 ,22 ,30), 'finalcut','Y5', 2, 123456789)
+        second = (archPath, 'ACTIVE', datetime.datetime(2017, 5, 16, 4, 0, 7), 'coadd', 'Y2A', 2, 222333444555)
+        third = (archPath, 'JUNK', datetime.datetime(2018, 2, 3, 5, 23, 5), 'multiepoch', 'Y6', 0, 4455226677)
+        fourth = (archPath, 'ACTIVE', datetime.datetime(2019, 4, 6, 2, 3, 0), 'sne', 'REPROC', 0, 9988776655)
+        fifth = (archPath, 'ACTIVE', datetime.datetime(2019, 8, 25, 6, 0, 3), 'sne', 'y1', 0, 8877665544)
+        sixth = (archPath, 'NEW', datetime.datetime(2018, 5, 6, 8, 12, 40), 'sne', 'y2', 0, 4477339922)
+        seventh = (archPath, 'ACTIVE', datetime.datetime(2016, 4, 3, 9, 25, 6), 'firstcut', 'Y2', 2, 2233883377)
+        eighth = (archPath, 'ACTIVE', datetime.datetime(2018, 4, 9, 18, 5, 22), 'photoz', 'YY', 0, 9988776600)
+        nineth = (archPath, 'ACTIVE', datetime.datetime(2017, 11, 7, 22, 3, 46), 'prebpm', 'YY', 1, 2345987353)
+        tenth = (archPath, 'ACTIVE', datetime.datetime(2018, 5, 7, 0, 0, 1), 'precal', 'Y2', 0, 33885)
+        eleventh = (archPath, 'ACTIVE', datetime.datetime(2018, 2, 1, 18, 4, 0), 'supercal', 'Y5', 0, 8855774488)
+        twelfth = (archPath, 'ACTIVE', datetime.datetime(2017, 5, 3, 9, 7, 55), 'RAW', 'Y4', 0, 448833)
+        myMock.setReturn([(first, second, third, fourth, fifth, sixth, seventh, eighth, nineth, tenth, eleventh, twelfth)])
+
+        mylist = []
+        aset.add_dirs(myMock.cursor(), myMock, mylist)
+        self.assertEqual(len(mylist), 11)
+        self.assertEqual(mylist[10][3], 10)
+        self.assertEqual(mylist[2][3], 2)
 
     def test_junk_runs(self):
         myMock = MockUtil()
+        myMock.setReturn = [(('/path/1',),('/path/2',))]
+        aset.junk_runs(myMock)
+        self.assertEqual(myMock.getCount('prepare'), 1)
 
     def test_parse_options(self):
         temp = copy.deepcopy(sys.argv)
