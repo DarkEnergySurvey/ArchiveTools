@@ -33,11 +33,15 @@ class MockDbi(object):
         if 'descr' in kwargs.keys():
             self.descr = kwargs['descr']
         else :
-            self.descr = {}
+            self.descr = []
         self.con = self.Connection()
         self._curs = None
         self.count = {'cursor': 0,
-                      'commit': 0}
+                      'commit': 0,
+                      'get_positional_bind_string': 0}
+
+    def get_positional_bind_string(self, *args, **kwargs):
+        self.count['get_positional_bind_string'] += 1
 
     def getCount(self, attrib):
         if attrib in self.count.keys():
@@ -70,10 +74,14 @@ class MockDbi(object):
             return True
 
     class Cursor(object):
-        def __init__(self, data=[], descr={}):
+        def __init__(self, data=[], descr=[]):
             self.data = data
+            self.current_data = None
+            self.select = False
             self.data.reverse()
-            self.description = descr
+            self.description = None
+            self.descr_data = descr
+            self.descr_data.reverse()
             self.count = {'execute': 0,
                           'fetchall': 0,
                           'prepare': 0,
@@ -81,9 +89,9 @@ class MockDbi(object):
             self._idx = 0
 
         def next(self):
-            if self._idx < len(self.data):
+            if self._idx < len(self.current_data):
                 self._idx += 1
-                return self.data[self._idx - 1]
+                return self.current_data[self._idx - 1]
             raise StopIteration
 
         def __iter__(self):
@@ -97,19 +105,47 @@ class MockDbi(object):
             self.data.reverse()
 
         def execute(self,*args, **kwargs):
+            self._idx = 0
+            if args:
+                if isinstance(args[0], str):
+                    if args[0].lower().startswith('select'):
+                        try:
+                            self.description = self.descr_data.pop()
+                        except:
+                            self.description = None
+                        try:
+                            self.current_data = self.data.pop()
+                        except:
+                            self.current_data = None
+            elif self.select:
+                try:
+                    self.description = self.descr_data.pop()
+                except:
+                    self.description = None
+                try:
+                    self.current_data = self.data.pop()
+                except:
+                    self.current_data = None
             self.count['execute'] += 1
 
         def fetchall(self):
             #print "DATA",self.data
             self.count['fetchall'] += 1
-            if self.data:
-                return self.data.pop()
+            if self.current_data:
+                return self.current_data
             return None
 
         def prepare(self, *args, **kwargs):
+            self.select = False
+            if args:
+                if isinstance(args[0], str):
+                    if args[0].lower().startswith('select'):
+                        self.select = True
             self.count['prepare'] += 1
 
         def executemany(self, *args, **kwargs):
+            self._idx = 0
+            self.select = False
             self.count['executemany'] += 1
 
     def setReturn(self, data):
@@ -122,7 +158,7 @@ class MockDbi(object):
         self.count['commit'] += 1
 
 class MockUtil(MagicMock, MockDbi):
-    def __init__(self, data=[], descr={}):
+    def __init__(self, data=[], descr=[]):
         MagicMock.__init__(self)
         MockDbi.__init__(self, data=data, descr=descr)
         self.checkVals = [True, False]
@@ -882,25 +918,64 @@ class TestArchiveSetup(unittest.TestCase):
         self.assertEqual(int(args['days']), 3)
 
     def test_query_attempts(self):
-        results = [('finalcut', 'U1', 5520, 1, 88776655, '/main/path', datetime.datetime(2018, 3, 3, 4, 5, 6), datetime.datetime(2018, 3, 5, 4, 4, 4), 0, 88779900),
+        results = [(('finalcut', 'U1', 5520, 1, 88776655, '/main/path', datetime.datetime(2018, 3, 3, 4, 5, 6), datetime.datetime(2018, 3, 5, 4, 4, 4), 0, 88779900),
                    ('firstcut', 'U3', 110, 5, 99330, '/main/path/3', datetime.datetime(2018, 3, 9, 18, 20, 0),
-                   None, None, 16222)]
-        descr = [['pipeline', 0],
-                 ['unitname', 0],
-                 ['reqnum', 0],
-                 ['attnum', 0],
-                 ['task_id', 0],
-                 ['archive_path', 0],
-                 ['start_time', 0],
-                 ['end_time', 0],
-                 ['status', 0],
-                 ['pfwid', 0]]
+                   None, None, 16222))] * 2
+        descr = [[['pipeline', 0],
+                  ['unitname', 0],
+                  ['reqnum', 0],
+                  ['attnum', 0],
+                  ['task_id', 0],
+                  ['archive_path', 0],
+                  ['start_time', 0],
+                  ['end_time', 0],
+                  ['status', 0],
+                  ['pfwid', 0]]]*2
         myMock = MockDbi(data=results, descr=descr)
         ati = hungjobs.query_attempts(myMock, None, '4', MagicMock())
         self.assertEqual(len(ati), 2)
 
-    #def test_query_tasks(self):
-    #    self.assertTrue(True)
+        myMock = MockDbi(data=results, descr=descr)
+
+        ati = hungjobs.query_attempts(myMock, 'pipe', '4', MagicMock())
+        self.assertEqual(len(ati), 2)
+
+    def test_save_att_taskids(self):
+        myMock = MockDbi()
+        hungjobs.save_att_taskids({12345:[], 445533:[], 62626:[]}, myMock)
+        self.assertEqual(myMock.getCount('executemany'), 1)
+        self.assertEqual(myMock.getCount('commit'), 0)
+
+    def test_query_tasks(self):
+        results = [((None, 'descmp4.cosmology.illinois.edu', 'starflat', 0, 224433, 224400, datetime.datetime(2018, 2, 8, 13, 2, 8), 224000, datetime.timedelta(0, 100.)),
+                    ('task1', 'descmp4.cosmology.illinois.edu', 'exec_1', None, 226851, 226650, datetime.datetime(2018, 2, 8, 15, 28, 36), 224000, None)),
+                    (('desar2-out-2', datetime.datetime(2018, 2, 8, 15, 29, 38), datetime.datetime(2018, 2, 8, 15, 29, 42), None, 'descmp4.cosmology.illinois.edu', 'exec_1', 226851, 224000, 226650, datetime.datetime(2018, 2, 8, 15, 29, 36)),)]
+        descr = [[['label', 0],
+                  ['exec_host', 0],
+                  ['name', 0],
+                  ['status', 0],
+                  ['id', 0],
+                  ['parent_task_id', 0],
+                  ['start_time', 0],
+                  ['root_task_id', 0],
+                  ['length', 0]],
+                 [['sem_name', 0],
+                  ['request_time', 0],
+                  ['grant_time', 0],
+                  ['release_time', 0],
+                  ['exec_host', 0],
+                  ['name', 0],
+                  ['id', 0],
+                  ['root_task_id', 0],
+                  ['parent_task_id', 0],
+                  ['start_time', 0]]
+                 ]
+        myMock = MockDbi(data=results, descr=descr)
+        res, rtr = hungjobs.query_tasks(myMock)
+        self.assertEqual(len(res[res.keys()[0]].keys()), 2)
+        self.assertEqual(len(rtr.keys()), 1)
+        self.assertTrue(rtr.keys()[0] in res.keys())
+
 
     #def test_connect(self):
     #    self.assertTrue(True)
