@@ -66,7 +66,6 @@ def query_attempts(dbh, pipeline, days, html):
     #print sql
     curs.execute(sql)
     desc = [d[0].lower() for d in curs.description]
-    #print desc
 
     attinfo = {}
     for row in curs:
@@ -103,7 +102,7 @@ def save_att_taskids(attinfo, dbh):
     #res= curs.fetchall()
     #print res
 
-    if len(att_ids) == 0:
+    if not att_ids:
         #print "returning"
         return
     # insert into the gtt_id table
@@ -128,7 +127,6 @@ def query_tasks(dbh):
         Tuple containing the task info (dict) and active transfers (dict)
     """
     # assumes attempt task_ids are in gtt_id table
-
     curs = dbh.cursor()
 
     # query the task table
@@ -144,10 +142,9 @@ def query_tasks(dbh):
         results[dat['root_task_id']][dat['id']] = dat
 
     sql = "select s.name as sem_name,s.request_time,s.grant_time,s.release_time, t.exec_host,t.name,t.id,t.root_task_id,t.parent_task_id,t.start_time from seminfo s, task t, gtt_id g where t.root_task_id=g.id and t.name like 'trans%' and t.id=s.task_id and t.end_time is NULL"
-    #a = time.time()
-    #print "START3"
+
     curs.execute(sql)
-    #print "TIME3 ", time.time() - a
+
     desc = [dd[0].lower() for dd in curs.description]
 
     results_trans = {}
@@ -269,7 +266,7 @@ def find_hung(attinfo, taskinfo, html):
         html : file handle
             File hand for html output
     """
-    if len(attinfo) > 0:
+    if attinfo:
         html.write('<br><b>Job&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PFWID&nbsp;&nbsp;&nbsp;&nbsp;Start Time&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Archive Path&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Host</b>\n')
     for attd in sorted(attinfo.values(), key=lambda x: x['start_time']):
         atid = attd['task_id']
@@ -309,7 +306,7 @@ def find_trans_hung(attinfo, taskinfo, html):
     html.write("<h3>Hung transfers</h3>")
     count = 0
     qdat = {}
-    queued_up = ''
+    #queued_up = ''
     for attd in sorted(attinfo.values(), key=lambda x: x['start_time']):
         #tasks_no_end = {}
         #tasks_failed = {}
@@ -319,10 +316,7 @@ def find_trans_hung(attinfo, taskinfo, html):
             queued = False
             for tdict in sorted(taskinfo[atid].values(), key=lambda x: x['start_time']):
                 if (tdict['name'].startswith('trans_input') and (reptime - tdict['start_time']).total_seconds() > 2*60*60) or (tdict['name'].startswith('trans_output') and (reptime - tdict['start_time']).total_seconds() > 10*60*60):
-                    if tdict['grant_time'] is not None:
-                        found = True
-                    else:
-                        queued = True
+                    found = bool(tdict['grant_time'])
             if not found and not queued:
                 break
             if found:
@@ -341,7 +335,7 @@ def find_trans_hung(attinfo, taskinfo, html):
                 html.write("</table>\n")
     if count == 0:
         html.write("&nbsp;&nbsp;No hung transfers found.")
-    if len(qdat) > 0:
+    if qdat:
         html.write('\n<br>The following may be transfer semaphores that are stuck.')
         html.write('<br><table border=1>\n')
         html.write('<tr><th>Task ID</th><th>Exec Host</th><th>Start Time</th><th>Request Time</th><th>Semaphore Name</th></tr>\n')
