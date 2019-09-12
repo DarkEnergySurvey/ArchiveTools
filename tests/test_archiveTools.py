@@ -776,6 +776,64 @@ class TestDES_archive(unittest.TestCase):
 
 class TestArchiveSetup(unittest.TestCase):
     # no test of main()
+    rootid = 1234567
+    children = [2345678, 3456789, 8892623, 998667]
+    grandchildren = [4567890]
+    Taskinfo = {rootid: {'id': rootid,
+                         'parent_task_id': None,
+                         'exec_host': 'dessub.cosmology.illinois.edu',
+                         'name': 'attempt',
+                         'label': None,
+                         'status': None,
+                         'length': datetime.timedelta(hours=5),
+                         'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                        },
+                children[0]: {'id': children[0],
+                              'parent_task_id': rootid,
+                              'exec_host': 'somewhere.else',
+                              'name': 'exec_1',
+                              'label': 'stars',
+                              'status': None,
+                              'length': datetime.timedelta(hours=4, minutes=10),
+                              'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                             },
+                children[1]: {'id': children[1],
+                              'parent_task_id': rootid,
+                              'exec_host': 'somewhere.else',
+                              'name': 'exec_1',
+                              'label': 'more_stars',
+                              'status': 0,
+                              'length': datetime.timedelta(minutes=35),
+                              'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                             },
+                grandchildren[0]: {'id': grandchildren[0],
+                                   'parent_task_id': children[0],
+                                   'exec_host': 'somewhere.else',
+                                   'name': 'transfer_home',
+                                   'label': None,
+                                   'status': None,
+                                   'length': datetime.timedelta(hours=4, minutes=2),
+                                   'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                                  },
+                children[2]: {'id': children[2],
+                              'parent_task_id': rootid,
+                              'exec_host': 'somewhere.else',
+                              'name': 'exec_1',
+                              'label': 'more_stars',
+                              'status': 1,
+                              'length': datetime.timedelta(hours=1),
+                              'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                             },
+                children[3]: {'id': children[3],
+                              'parent_task_id': rootid,
+                              'exec_host': 'somewhere.else',
+                              'name': 'exec_1',
+                              'label': 'more_stars2',
+                              'status': None,
+                              'length': None,
+                              'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                             }
+                 }
 
     def test_get_db(self):
         myMock = MockUtil()
@@ -984,107 +1042,51 @@ class TestArchiveSetup(unittest.TestCase):
 
 
     def test_connect(self):
-        rootid = 1234567
-        children = [2345678, 3456789]
-        grandchildren = [4567890]
-        tree = {rootid: {}}
-        taskinf = {'tsk': {'id': rootid,
-                           'parent_task_id': None},
-                   'tsk1': {'id': children[0],
-                            'parent_task_id': rootid},
-                   'tsk2': {'id': children[1],
-                            'parent_task_id': rootid},
-                   'tsk3': {'id': grandchildren[0],
-                            'parent_task_id': children[0]}
-                  }
+        tree = {self.rootid: {}}
+        taskinf = copy.deepcopy(self.Taskinfo)
         hungjobs.connect(tree, taskinf)
         self.assertEqual(len(tree.keys()), 1)
-        vals = tree[rootid]
-        self.assertEqual(len(vals.keys()), 2)
-        self.assertEqual(len(vals[children[0]].keys()), 1)
-        self.assertEqual(len(vals[children[1]].keys()), 0)
+        vals = tree[self.rootid]
+        self.assertEqual(len(vals.keys()), 4)
+        self.assertEqual(len(vals[self.children[0]].keys()), 1)
+        self.assertEqual(len(vals[self.children[1]].keys()), 0)
 
     def test_make_tree(self):
-        rootid = 1234567
-        children = [2345678, 3456789]
-        grandchildren = [4567890]
-        taskinf = {'tsk': {'id': rootid,
-                           'parent_task_id': None},
-                   'tsk1': {'id': children[0],
-                            'parent_task_id': rootid},
-                   'tsk2': {'id': children[1],
-                            'parent_task_id': rootid},
-                   'tsk3': {'id': grandchildren[0],
-                            'parent_task_id': children[0]}
-                  }
+        taskinf = copy.deepcopy(self.Taskinfo)
         tree = hungjobs.make_tree(taskinf)
         self.assertEqual(len(tree.keys()), 1)
-        vals = tree[rootid]
-        self.assertEqual(len(vals.keys()), 2)
-        self.assertEqual(len(vals[children[0]].keys()), 1)
-        self.assertEqual(len(vals[children[1]].keys()), 0)
+        vals = tree[self.rootid]
+        self.assertEqual(len(vals.keys()), 4)
+        self.assertEqual(len(vals[self.children[0]].keys()), 1)
+        self.assertEqual(len(vals[self.children[1]].keys()), 0)
 
         with self.assertRaises(UnboundLocalError):
             tree = hungjobs.make_tree({})
 
     def test_write_tree(self):
-        rootid = 1234567
-        children = [2345678, 3456789, 8892623]
-        grandchildren = [4567890]
-        taskinf = {rootid: {'id': rootid,
-                            'parent_task_id': None,
-                            'exec_host': 'dessub.cosmology.illinois.edu',
-                            'name': 'attempt',
-                            'label': None,
-                            'status': None,
-                            'length': datetime.timedelta(hours=5),
-                            'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
-                           },
-                   children[0]: {'id': children[0],
-                                 'parent_task_id': rootid,
-                                 'exec_host': 'somewhere.else',
-                                 'name': 'exec_1',
-                                 'label': 'stars',
-                                 'status': None,
-                                 'length': datetime.timedelta(hours=4, minutes=10),
-                                 'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
-                                },
-                   children[1]: {'id': children[1],
-                                 'parent_task_id': rootid,
-                                 'exec_host': 'somewhere.else',
-                                 'name': 'exec_1',
-                                 'label': 'more_stars',
-                                 'status': 0,
-                                 'length': datetime.timedelta(minutes=35),
-                                 'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
-                                },
-                   grandchildren[0]: {'id': grandchildren[0],
-                                      'parent_task_id': children[0],
-                                      'exec_host': 'somewhere.else',
-                                      'name': 'transfer_home',
-                                      'label': None,
-                                      'status': None,
-                                      'length': datetime.timedelta(hours=4, minutes=2),
-                                      'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
-                                     },
-                   children[2]: {'id': children[2],
-                                 'parent_task_id': rootid,
-                                 'exec_host': 'somewhere.else',
-                                 'name': 'exec_1',
-                                 'label': 'more_stars',
-                                 'status': 1,
-                                 'length': datetime.timedelta(hours=1),
-                                 'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
-                                }
-                  }
+        taskinf = copy.deepcopy(self.Taskinfo)
         tree = hungjobs.make_tree(taskinf)
 
         host, stat, line = hungjobs.write_tree(tree, taskinf)
         self.assertEqual(host, 'somewhere.else')
         self.assertEqual(stat, 2)
 
-    #def test_find_hung(self):
-    #    self.assertTrue(True)
+    def test_find_hung(self):
+        with patch('__main__.open', mock_open()) as wro:
+            hungjobs.find_hung({}, {}, wro())
+        attid = {1: {'task_id': self.rootid,
+                     'unitname': 'U1',
+                     'reqnum': '2345',
+                     'attnum': '2',
+                     'pfwid': 1230948712340,
+                     'start_time': datetime.datetime(2018, 3, 4, 13, 4, 55),
+                     'archive_path': '/the/path'}}
+        with patch('__main__.open', mock_open()) as wro:
+            hungjobs.find_hung(attid, {self.rootid: copy.deepcopy(self.Taskinfo)}, wro())
+        taski = copy.deepcopy(self.Taskinfo)
+        del taski[self.children[2]]['exec_host']
+        with patch('__main__.open', mock_open()) as wro:
+            hungjobs.find_hung(attid, {self.rootid: taski}, wro())
 
     #def test_find_trans_hung(self):
     #    self.assertTrue(True)
