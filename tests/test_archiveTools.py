@@ -989,13 +989,13 @@ class TestArchiveSetup(unittest.TestCase):
         grandchildren = [4567890]
         tree = {rootid: {}}
         taskinf = {'tsk': {'id': rootid,
-                    'parent_task_id': None},
+                           'parent_task_id': None},
                    'tsk1': {'id': children[0],
-                    'parent_task_id': rootid},
+                            'parent_task_id': rootid},
                    'tsk2': {'id': children[1],
-                    'parent_task_id': rootid},
+                            'parent_task_id': rootid},
                    'tsk3': {'id': grandchildren[0],
-                    'parent_task_id': children[0]}
+                            'parent_task_id': children[0]}
                   }
         hungjobs.connect(tree, taskinf)
         self.assertEqual(len(tree.keys()), 1)
@@ -1009,13 +1009,13 @@ class TestArchiveSetup(unittest.TestCase):
         children = [2345678, 3456789]
         grandchildren = [4567890]
         taskinf = {'tsk': {'id': rootid,
-                    'parent_task_id': None},
+                           'parent_task_id': None},
                    'tsk1': {'id': children[0],
-                    'parent_task_id': rootid},
+                            'parent_task_id': rootid},
                    'tsk2': {'id': children[1],
-                    'parent_task_id': rootid},
+                            'parent_task_id': rootid},
                    'tsk3': {'id': grandchildren[0],
-                    'parent_task_id': children[0]}
+                            'parent_task_id': children[0]}
                   }
         tree = hungjobs.make_tree(taskinf)
         self.assertEqual(len(tree.keys()), 1)
@@ -1027,16 +1027,66 @@ class TestArchiveSetup(unittest.TestCase):
         with self.assertRaises(UnboundLocalError):
             tree = hungjobs.make_tree({})
 
-    #def test_write_tree(self):
-    #    self.assertTrue(True)
+    def test_write_tree(self):
+        rootid = 1234567
+        children = [2345678, 3456789, 8892623]
+        grandchildren = [4567890]
+        taskinf = {rootid: {'id': rootid,
+                            'parent_task_id': None,
+                            'exec_host': 'dessub.cosmology.illinois.edu',
+                            'name': 'attempt',
+                            'label': None,
+                            'status': None,
+                            'length': datetime.timedelta(hours=5),
+                            'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                           },
+                   children[0]: {'id': children[0],
+                                 'parent_task_id': rootid,
+                                 'exec_host': 'somewhere.else',
+                                 'name': 'exec_1',
+                                 'label': 'stars',
+                                 'status': None,
+                                 'length': datetime.timedelta(hours=4, minutes=10),
+                                 'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                                },
+                   children[1]: {'id': children[1],
+                                 'parent_task_id': rootid,
+                                 'exec_host': 'somewhere.else',
+                                 'name': 'exec_1',
+                                 'label': 'more_stars',
+                                 'status': 0,
+                                 'length': datetime.timedelta(minutes=35),
+                                 'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                                },
+                   grandchildren[0]: {'id': grandchildren[0],
+                                      'parent_task_id': children[0],
+                                      'exec_host': 'somewhere.else',
+                                      'name': 'transfer_home',
+                                      'label': None,
+                                      'status': None,
+                                      'length': datetime.timedelta(hours=4, minutes=2),
+                                      'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                                     },
+                   children[2]: {'id': children[2],
+                                 'parent_task_id': rootid,
+                                 'exec_host': 'somewhere.else',
+                                 'name': 'exec_1',
+                                 'label': 'more_stars',
+                                 'status': 1,
+                                 'length': datetime.timedelta(hours=1),
+                                 'start_time': datetime.datetime(2018, 5, 6, 12, 36, 0)
+                                }
+                  }
+        tree = hungjobs.make_tree(taskinf)
+
+        host, stat, line = hungjobs.write_tree(tree, taskinf)
+        self.assertEqual(host, 'somewhere.else')
+        self.assertEqual(stat, 2)
 
     #def test_find_hung(self):
     #    self.assertTrue(True)
 
     #def test_find_trans_hung(self):
-    #    self.assertTrue(True)
-
-    #def test_main(self):
     #    self.assertTrue(True)
 
 
