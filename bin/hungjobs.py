@@ -204,7 +204,7 @@ def make_tree(taskinfo):
 
 ######################################################################
 def write_tree(tree, tasks, level=0):
-    """ Method to write the task trees to thml. Recursively calls itself to construct the output
+    """ Method to write the task trees to html. Recursively calls itself to construct the output
 
         Parameters
         ----------

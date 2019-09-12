@@ -945,10 +945,17 @@ class TestArchiveSetup(unittest.TestCase):
         self.assertEqual(myMock.getCount('executemany'), 1)
         self.assertEqual(myMock.getCount('commit'), 0)
 
+        hungjobs.save_att_taskids({}, myMock)
+        self.assertEqual(myMock.getCount('executemany'), 0)
+        self.assertEqual(myMock.getCount('commit'), 0)
+
+
     def test_query_tasks(self):
         results = [((None, 'descmp4.cosmology.illinois.edu', 'starflat', 0, 224433, 224400, datetime.datetime(2018, 2, 8, 13, 2, 8), 224000, datetime.timedelta(0, 100.)),
-                    ('task1', 'descmp4.cosmology.illinois.edu', 'exec_1', None, 226851, 226650, datetime.datetime(2018, 2, 8, 15, 28, 36), 224000, None)),
-                   (('desar2-out-2', datetime.datetime(2018, 2, 8, 15, 29, 38), datetime.datetime(2018, 2, 8, 15, 29, 42), None, 'descmp4.cosmology.illinois.edu', 'exec_1', 226851, 224000, 226650, datetime.datetime(2018, 2, 8, 15, 29, 36)),)]
+                    ('task1', 'descmp4.cosmology.illinois.edu', 'exec_1', None, 226851, 226650, datetime.datetime(2018, 2, 8, 15, 28, 36), 224000, None),
+                    ('task2', 'descmp4.cosmology.illinois.edu', 'exec_2', None, 226852, 226650, datetime.datetime(2018, 2, 8, 15, 28, 37), 224000, None)),
+                   (('desar2-out-2', datetime.datetime(2018, 2, 8, 15, 29, 38), datetime.datetime(2018, 2, 8, 15, 29, 42), None, 'descmp4.cosmology.illinois.edu', 'exec_1', 226851, 224000, 226650, datetime.datetime(2018, 2, 8, 15, 29, 36)),
+                    ('desar2-out-3', datetime.datetime(2018, 2, 8, 15, 29, 39), datetime.datetime(2018, 2, 8, 15, 29, 43), None, 'descmp4.cosmology.illinois.edu', 'exec_2', 226852, 224000, 226650, datetime.datetime(2018, 2, 8, 15, 29, 36)))]
         descr = [[['label', 0],
                   ['exec_host', 0],
                   ['name', 0],
@@ -971,7 +978,7 @@ class TestArchiveSetup(unittest.TestCase):
                 ]
         myMock = MockDbi(data=results, descr=descr)
         res, rtr = hungjobs.query_tasks(myMock)
-        self.assertEqual(len(res[res.keys()[0]].keys()), 2)
+        self.assertEqual(len(res[res.keys()[0]].keys()), 3)
         self.assertEqual(len(rtr.keys()), 1)
         self.assertTrue(rtr.keys()[0] in res.keys())
 
@@ -1017,6 +1024,8 @@ class TestArchiveSetup(unittest.TestCase):
         self.assertEqual(len(vals[children[0]].keys()), 1)
         self.assertEqual(len(vals[children[1]].keys()), 0)
 
+        with self.assertRaises(UnboundLocalError):
+            tree = hungjobs.make_tree({})
 
     #def test_write_tree(self):
     #    self.assertTrue(True)
