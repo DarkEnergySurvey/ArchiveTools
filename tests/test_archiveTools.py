@@ -997,8 +997,26 @@ class TestArchiveSetup(unittest.TestCase):
         self.assertEqual(len(vals[children[0]].keys()), 1)
         self.assertEqual(len(vals[children[1]].keys()), 0)
 
-    #def test_make_tree(self):
-    #    self.assertTrue(True)
+    def test_make_tree(self):
+        rootid = 1234567
+        children = [2345678, 3456789]
+        grandchildren = [4567890]
+        taskinf = {'tsk': {'id': rootid,
+                    'parent_task_id': None},
+                   'tsk1': {'id': children[0],
+                    'parent_task_id': rootid},
+                   'tsk2': {'id': children[1],
+                    'parent_task_id': rootid},
+                   'tsk3': {'id': grandchildren[0],
+                    'parent_task_id': children[0]}
+                  }
+        tree = hungjobs.make_tree(taskinf)
+        self.assertEqual(len(tree.keys()), 1)
+        vals = tree[rootid]
+        self.assertEqual(len(vals.keys()), 2)
+        self.assertEqual(len(vals[children[0]].keys()), 1)
+        self.assertEqual(len(vals[children[1]].keys()), 0)
+
 
     #def test_write_tree(self):
     #    self.assertTrue(True)
