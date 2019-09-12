@@ -1088,8 +1088,22 @@ class TestArchiveSetup(unittest.TestCase):
         with patch('__main__.open', mock_open()) as wro:
             hungjobs.find_hung(attid, {self.rootid: taski}, wro())
 
-    #def test_find_trans_hung(self):
-    #    self.assertTrue(True)
+    def test_find_trans_hung(self):
+        with patch('__main__.open', mock_open()) as wro:
+            hungjobs.find_trans_hung({}, {}, wro())
+        attid = {1: {'task_id': self.rootid,
+                     'unitname': 'U1',
+                     'reqnum': '2345',
+                     'attnum': '2',
+                     'pfwid': 1230948712340,
+                     'start_time': datetime.datetime(2018, 3, 4, 13, 4, 55),
+                     'archive_path': '/the/path'}}
+        with patch('__main__.open', mock_open()) as wro:
+            hungjobs.find_trans_hung(attid, {self.rootid: copy.deepcopy(self.Taskinfo)}, wro())
+        taski = copy.deepcopy(self.Taskinfo)
+        del taski[self.children[2]]['exec_host']
+        with patch('__main__.open', mock_open()) as wro:
+            hungjobs.find_trans_hung(attid, {self.rootid: taski}, wro())
 
 
 #class TestJobmonitor(unittest.TestCase):
