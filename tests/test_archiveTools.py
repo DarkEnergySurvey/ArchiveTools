@@ -791,8 +791,8 @@ class TestArchiveSetup(unittest.TestCase):
                     [['/d12', '', filenames],
                      ['/d33', '', []],
                      ['/d66', '', [filenames[2]]]]]
-        myMock.setReturn([((0,),),((1,),),((0,),),((0,),),((0,),),((0,),),((0,),),((0,),),((0,),)])
-        globs = [filenames, [filenames[2],], [filenames[1],],filenames, [filenames[2],], [filenames[1],],filenames, [filenames[2],], [filenames[1],]]
+        myMock.setReturn([((0, ), ), ((1, ), ), ((0, ), ), ((0, ), ), ((0, ), ), ((0, ), ), ((0, ), ), ((0, ), ), ((0, ), )])
+        globs = [filenames, [filenames[2], ], [filenames[1], ], filenames, [filenames[2], ], [filenames[1], ], filenames, [filenames[2], ], [filenames[1], ]]
         times = [time.time() - 100000.,
                  time.time() - 500.,
                  time.time() - 80000.,
@@ -846,7 +846,7 @@ class TestArchiveSetup(unittest.TestCase):
     def test_add_dirs(self):
         myMock = MockUtil()
         archPath = '/the/archive/path'
-        first = (archPath, 'NEW', datetime.datetime(2018, 12, 14, 5 ,22 ,30), 'finalcut','Y5', 2, 123456789)
+        first = (archPath, 'NEW', datetime.datetime(2018, 12, 14, 5, 22, 30), 'finalcut', 'Y5', 2, 123456789)
         second = (archPath, 'ACTIVE', datetime.datetime(2017, 5, 16, 4, 0, 7), 'coadd', 'Y2A', 2, 222333444555)
         third = (archPath, 'JUNK', datetime.datetime(2018, 2, 3, 5, 23, 5), 'multiepoch', 'Y6', 0, 4455226677)
         fourth = (archPath, 'ACTIVE', datetime.datetime(2019, 4, 6, 2, 3, 0), 'sne', 'REPROC', 0, 9988776655)
@@ -874,7 +874,7 @@ class TestArchiveSetup(unittest.TestCase):
 
     def test_junk_runs(self):
         myMock = MockUtil()
-        myMock.setReturn = [(('/path/1',),('/path/2',))]
+        myMock.setReturn = [(('/path/1', ) ,('/path/2', ))]
         aset.junk_runs(myMock)
         self.assertEqual(myMock.getCount('prepare'), 1)
 
@@ -919,8 +919,7 @@ class TestArchiveSetup(unittest.TestCase):
 
     def test_query_attempts(self):
         results = [(('finalcut', 'U1', 5520, 1, 88776655, '/main/path', datetime.datetime(2018, 3, 3, 4, 5, 6), datetime.datetime(2018, 3, 5, 4, 4, 4), 0, 88779900),
-                   ('firstcut', 'U3', 110, 5, 99330, '/main/path/3', datetime.datetime(2018, 3, 9, 18, 20, 0),
-                   None, None, 16222))] * 2
+                    ('firstcut', 'U3', 110, 5, 99330, '/main/path/3', datetime.datetime(2018, 3, 9, 18, 20, 0), None, None, 16222))] * 2
         descr = [[['pipeline', 0],
                   ['unitname', 0],
                   ['reqnum', 0],
@@ -949,7 +948,7 @@ class TestArchiveSetup(unittest.TestCase):
     def test_query_tasks(self):
         results = [((None, 'descmp4.cosmology.illinois.edu', 'starflat', 0, 224433, 224400, datetime.datetime(2018, 2, 8, 13, 2, 8), 224000, datetime.timedelta(0, 100.)),
                     ('task1', 'descmp4.cosmology.illinois.edu', 'exec_1', None, 226851, 226650, datetime.datetime(2018, 2, 8, 15, 28, 36), 224000, None)),
-                    (('desar2-out-2', datetime.datetime(2018, 2, 8, 15, 29, 38), datetime.datetime(2018, 2, 8, 15, 29, 42), None, 'descmp4.cosmology.illinois.edu', 'exec_1', 226851, 224000, 226650, datetime.datetime(2018, 2, 8, 15, 29, 36)),)]
+                   (('desar2-out-2', datetime.datetime(2018, 2, 8, 15, 29, 38), datetime.datetime(2018, 2, 8, 15, 29, 42), None, 'descmp4.cosmology.illinois.edu', 'exec_1', 226851, 224000, 226650, datetime.datetime(2018, 2, 8, 15, 29, 36)),)]
         descr = [[['label', 0],
                   ['exec_host', 0],
                   ['name', 0],
@@ -969,7 +968,7 @@ class TestArchiveSetup(unittest.TestCase):
                   ['root_task_id', 0],
                   ['parent_task_id', 0],
                   ['start_time', 0]]
-                 ]
+                ]
         myMock = MockDbi(data=results, descr=descr)
         res, rtr = hungjobs.query_tasks(myMock)
         self.assertEqual(len(res[res.keys()[0]].keys()), 2)
@@ -977,8 +976,26 @@ class TestArchiveSetup(unittest.TestCase):
         self.assertTrue(rtr.keys()[0] in res.keys())
 
 
-    #def test_connect(self):
-    #    self.assertTrue(True)
+    def test_connect(self):
+        rootid = 1234567
+        children = [2345678, 3456789]
+        grandchildren = [4567890]
+        tree = {rootid: {}}
+        taskinf = {'tsk': {'id': rootid,
+                    'parent_task_id': None},
+                   'tsk1': {'id': children[0],
+                    'parent_task_id': rootid},
+                   'tsk2': {'id': children[1],
+                    'parent_task_id': rootid},
+                   'tsk3': {'id': grandchildren[0],
+                    'parent_task_id': children[0]}
+                  }
+        hungjobs.connect(tree, taskinf)
+        self.assertEqual(len(tree.keys()), 1)
+        vals = tree[rootid]
+        self.assertEqual(len(vals.keys()), 2)
+        self.assertEqual(len(vals[children[0]].keys()), 1)
+        self.assertEqual(len(vals[children[1]].keys()), 0)
 
     #def test_make_tree(self):
     #    self.assertTrue(True)
